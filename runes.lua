@@ -30,7 +30,7 @@ patterns = {
 
 pressed_keys = {}
 lit_keys = {}
-shapes = {}
+runes = {}
 
 g = grid.connect()
 
@@ -47,15 +47,15 @@ function reset()
   print('reset')
   g:all(0)
   grid_keys = {}
-  shapes = {}
+  runes = {}
 end
 
-function create_runes()
-   --- Look through the grid_keys, and check if any of the lit keys form a complete shape based on the pattern list
+function parse_runes()
+   --- Look through the grid_keys, and check if any of the lit keys form a complete rune shape based on the pattern list
    --- Account for the fact that the patterns are relative to the top-left corner of a shape starting at position 1,1
-   --- but shapes can be anywhere on the grid
-   --- If any are found, remove them from the lit keys list, create a shape to contain them
-   --- and add it to the shapes list
+   --- but runes can be anywhere on the grid
+   --- If any are found, remove them from the lit keys list, create a rune to contain them
+   --- and add it to the runes list
     for pattern_name, pattern in pairs(patterns) do
       for coord, grid_key in pairs(grid_keys) do
         local x, y, lit = grid_key.x, grid_key.y, grid_key.lit
@@ -68,13 +68,15 @@ function create_runes()
               break
             end
             if i == #pattern then
+              rune_keys = {}
               for i, pattern_key in ipairs(pattern) do
                 local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
                 local shape_x, shape_y = x - pattern_x + 1, y - pattern_y + 1
                 local shape_coord = shape_x .. "," .. shape_y
+                table.insert(rune_keys, {x = shape_x, y = shape_y})
                 grid_keys[shape_coord].lit = 0
               end
-              table.insert(shapes, {pattern = pattern_name, x = shape_x, y = shape_y})
+              table.insert(runes, {pattern = pattern_name, keys = rune_keys})
             end
           end
         end
@@ -102,7 +104,7 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
     end
   end
 
-  create_runes()
+  parse_runes()
   grid_dirty = true
 end
 
@@ -146,6 +148,11 @@ function grid_redraw()
     if pressed == 1 then
       print("pressed key " .. coord)
       g:led(x, y, 15)
+    end
+  end
+  for i, rune in ipairs(runes) do
+    for j, key in ipairs(rune.keys) do
+      g:led(key.x, key.y, 2)
     end
   end
   g:refresh()
