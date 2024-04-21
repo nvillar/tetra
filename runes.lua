@@ -12,7 +12,7 @@ patterns = {
   ["i0"]   = {{1,1}, {1,2}, {1,3}, {1,4}},    -- Line
   ["i90"]  = {{1,1}, {2,1}, {3,1}, {4,1}},
   ["z0"]   = {{1,1}, {2,1}, {2,2}, {3,2}},    -- Z
-  ["z90"]  = {{1,1}, {1,2}, {2,2}, {2,3}},
+  ["z90"]  = {{1,1}, {1,2}, {0,2}, {0,3}},
   ["s0"]   = {{1,1}, {2,1}, {2,0}, {3,0}},    -- S
   ["s90"]  = {{1,1}, {1,2}, {2,2}, {2,3}},     
   ["t0"]   = {{1,1}, {2,1}, {3,1}, {2,2}},    -- T
@@ -43,8 +43,9 @@ function reset()
   print('--- reset ---')
   grid_keys = {}
   runes = {}
-  g:all(0)
+  grid_dirty = true
 end
+
 
 function parse_runes()
    --- Look through the grid_keys, and check if any of the unclaimed keys form a complete rune shape based on the pattern list
@@ -113,6 +114,7 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
   --- used to identify the key in the grid_keys table, 
   --- e.g. for a 128 grid, a value between 1,1 and 8,16
   local coord =  x .. "," .. y
+  local w, h = g.cols, g.rows
 
   print("key " .. coord .. " pressed " .. tostring(z))
 
@@ -120,6 +122,7 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
   if z == 1 then
     pressed = true
   end 
+
 
   ---  if the key is not in the grid_keys table, add it with default values
   if (grid_keys[coord] == nil) then
@@ -139,11 +142,21 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
   --- update the pressed state
   grid_keys[coord].pressed = pressed
 
+  --- reset if two diagonally opposite corners are pressed
+  -- Check that the fields are not nil before checking if they are pressed
+
+  if ((grid_keys["1,1"] ~= nil and grid_keys[w .. "," .. h] ~= nil) and
+      (grid_keys["1,1"].pressed and grid_keys[w .. "," .. h].pressed)) or
+     ((grid_keys["1,".. h] ~= nil and grid_keys[w..",1"] ~= nil) and
+      (grid_keys["1,".. h].pressed and grid_keys[w..",1"])) then
+      reset()
+      return
+  end
+
   parse_runes()
 
   check_runes()
   
-
   grid_dirty = true
 
 end
@@ -189,10 +202,6 @@ function grid_redraw()
       end
     else
       g:led(x, y, 0)
-    end
-  
-    if pressed then
-      g:led(x, y, 15)
     end
   end
 
