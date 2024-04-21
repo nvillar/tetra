@@ -125,9 +125,9 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
 
 
   ---  if the key is not in the grid_keys table, add it with default values
-  if (grid_keys[coord] == nil) then
+  if grid_keys[coord] == nil and pressed then
     grid_keys[coord] = {x = x, y = y, pressed = pressed, active = true, unclaimed = true}
-  else
+  elseif grid_keys[coord] ~= nil then
     --- toggle off active state if the key is pressed and is unclaimed (only on press-down)
     if pressed and grid_keys[coord].active and grid_keys[coord].unclaimed then
       grid_keys[coord].active = false
@@ -137,13 +137,12 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
       grid_keys[coord].active = true
       grid_keys[coord].unclaimed = true
     end
+    --- update the pressed state
+    grid_keys[coord].pressed = pressed
   end
 
-  --- update the pressed state
-  grid_keys[coord].pressed = pressed
 
   --- reset if two diagonally opposite corners are pressed
-  -- Check that the fields are not nil before checking if they are pressed
 
   if ((grid_keys["1,1"] ~= nil and grid_keys[w .. "," .. h] ~= nil) and
       (grid_keys["1,1"].pressed and grid_keys[w .. "," .. h].pressed)) or
