@@ -26,11 +26,8 @@ patterns = {
   ["j0"]   = {{1,1}, {1,2}, {1,3}, {0,3}},    -- J
   ["j90"]  = {{1,1}, {2,1}, {3,1}, {3,2}},
   ["j180"] = {{1,1}, {2,1}, {1,2}, {1,3}},
+  ["j270"] = {{1,1}, {2,1}, {3,1}, {1,0}},
 }
-
-pressed_keys = {}
-lit_keys = {}
-runes = {}
 
 g = grid.connect()
 
@@ -42,41 +39,40 @@ function init() ------------------------------ init() is automatically called by
   reset()
 end
 
-
 function reset()
-  print('reset')
-  g:all(0)
+  print('--- reset ---')
   grid_keys = {}
   runes = {}
+  g:all(0)
 end
 
 function parse_runes()
-   --- Look through the grid_keys, and check if any of the lit keys form a complete rune shape based on the pattern list
+   --- Look through the grid_keys, and check if any of the unclaimed keys form a complete rune shape based on the pattern list
    --- Account for the fact that the patterns are relative to the top-left corner of a shape starting at position 1,1
    --- but runes can be anywhere on the grid
-   --- If any are found, remove them from the lit keys list, create a rune to contain them
+   --- If any are found, remove them from the unclaimed keys list, create a rune to contain them
    --- and add it to the runes list
     for pattern_name, pattern in pairs(patterns) do
       for coord, grid_key in pairs(grid_keys) do
-        local x, y, lit = grid_key.x, grid_key.y, grid_key.lit
-        if lit == 1 then
+        local x, y, unclaimed = grid_key.x, grid_key.y, grid_key.unclaimed
+        if unclaimed then
           for i, pattern_key in ipairs(pattern) do
             local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
-            local shape_x, shape_y = x - pattern_x + 1, y - pattern_y + 1
-            local shape_coord = shape_x .. "," .. shape_y
-            if grid_keys[shape_coord] == nil or grid_keys[shape_coord].lit == 0 then
+            local rune_key_x, rune_key_y = x - pattern_x + 1, y - pattern_y + 1
+            local rune_key_coord = rune_key_x .. "," .. rune_key_y
+            if grid_keys[rune_key_coord] == nil or not grid_keys[rune_key_coord].unclaimed or not grid_keys[rune_key_coord].active then
               break
             end
             if i == #pattern then
               rune_keys = {}
               for i, pattern_key in ipairs(pattern) do
                 local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
-                local shape_x, shape_y = x - pattern_x + 1, y - pattern_y + 1
-                local shape_coord = shape_x .. "," .. shape_y
-                table.insert(rune_keys, {x = shape_x, y = shape_y})
-                grid_keys[shape_coord].lit = 0
+                local rune_key_x, rune_key_y = x - pattern_x + 1, y - pattern_y + 1
+                local rune_key_coord = rune_key_x .. "," .. rune_key_y
+                table.insert(rune_keys, {coord = rune_key_coord, x = rune_key_x, y = rune_key_y})
+                grid_keys[rune_key_coord].unclaimed = false
               end
-              table.insert(runes, {pattern = pattern_name, keys = rune_keys})
+              table.insert(runes, {pattern = pattern_name, keys = rune_keys, level = 15})
             end
           end
         end
@@ -84,28 +80,72 @@ function parse_runes()
     end
 end
 
+function check_runes()
+
+  for i, rune in ipairs(runes) do
+    
+    local pressed = false
+
+    for j, key in ipairs(rune.keys) do
+      if grid_keys[key.coord].pressed then
+        pressed = true
+        break
+      end
+      --- if all of the keys in the rune are not pressed, then the rune is not pressed
+      pressed = false
+    end
+    
+    if pressed then
+      rune.level = 12
+      print ("---------- rune pressed " .. rune.pattern .. " " .. tostring(pressed))
+    else
+      rune.level = 2
+      print ("---------- rune not pressed " .. rune.pattern .. " " .. tostring(pressed))
+    end
+
+    rune.pressed = pressed
+  end
+    grid_dirty = true  
+end
+ 
 
 function g.key(x, y, z) ---------------------- g.key() is automatically called by norns
+  --- used to identify the key in the grid_keys table, 
+  --- e.g. for a 128 grid, a value between 1,1 and 8,16
   local coord =  x .. "," .. y
- 
-  --- keep a list of currently pressed keys (z == 1)
-  if (grid_keys[coord] == nil) then
-    grid_keys[coord] = {x = x, y = y, pressed = z, lit = 0}
-  else
-    grid_keys[coord].pressed = z
-  end
 
-  if z == 1 then --- toggle lit state (only on key press, not release)
-    print("key " .. coord .. " pressed")
-    if grid_keys[coord].lit == 0 then
-      grid_keys[coord].lit = 1
-    else
-      grid_keys[coord].lit = 0
+  print("key " .. coord .. " pressed " .. tostring(z))
+
+  local pressed = false
+  if z == 1 then
+    pressed = true
+  end 
+
+  ---  if the key is not in the grid_keys table, add it with default values
+  if (grid_keys[coord] == nil) then
+    grid_keys[coord] = {x = x, y = y, pressed = pressed, active = true, unclaimed = true}
+  else
+    --- toggle off active state if the key is pressed and is unclaimed (only on press-down)
+    if pressed and grid_keys[coord].active and grid_keys[coord].unclaimed then
+      grid_keys[coord].active = false
+      grid_keys[coord].unclaimed = false
+    --- toggle on active state if the key is pressed and is not active (only on press-down)
+    elseif pressed and not grid_keys[coord].active then
+      grid_keys[coord].active = true
+      grid_keys[coord].unclaimed = true
     end
   end
 
+  --- update the pressed state
+  grid_keys[coord].pressed = pressed
+
   parse_runes()
+
+  check_runes()
+  
+
   grid_dirty = true
+
 end
 
 function enc(e, d) --------------- enc() is automatically called by norns
@@ -131,31 +171,33 @@ function press_down(i) ---------- a key has been pressed
 end
 
 function grid_redraw()
-  local cols = g.cols
-  local rows = g.rows
   g:all(0)
-  
-  print("----------------")
-  --- iterate through all lit keys and set them on the grid
-  for coord, grid_key in pairs(grid_keys) do
-    local x, y, pressed, lit = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit
-    print(" x " .. x .. " y " .. y .. " pressed " .. pressed .. " lit " .. lit)
-    print("---- key " .. coord)
-    if lit == 1 then
-      print("lit key " .. coord)
-      g:led(x, y, 5)
+
+  --- draw the runes
+  for i, rune in ipairs(runes) do
+    for j, key in ipairs(rune.keys) do
+      g:led(key.x, key.y, rune.level)
     end
-    if pressed == 1 then
-      print("pressed key " .. coord)
+  end
+  
+  --- draw the unclaimed keys and pressed locations
+  for coord, grid_key in pairs(grid_keys) do
+    local x, y, pressed, active, unclaimed = grid_key.x, grid_key.y, grid_key.pressed, grid_key.active, grid_key.unclaimed
+    if active then
+      if unclaimed then
+        g:led(x, y, 8)
+      end
+    else
+      g:led(x, y, 0)
+    end
+  
+    if pressed then
       g:led(x, y, 15)
     end
   end
-  for i, rune in ipairs(runes) do
-    for j, key in ipairs(rune.keys) do
-      g:led(key.x, key.y, 2)
-    end
-  end
+
   g:refresh()
+
 end
 
 function grid_redraw_clock()
