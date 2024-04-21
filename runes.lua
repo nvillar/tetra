@@ -82,43 +82,42 @@ function parse_runes()
 end
 
 function check_runes()
-
-  for i, rune in ipairs(runes) do
-    
-    local pressed = false
-
+  local i = 1
+  while i <= #runes do
+    local rune = runes[i]
+    local pressed_keys = 0
     for j, key in ipairs(rune.keys) do
+      --- count the number of keys in the rune that are pressed
       if grid_keys[key.coord].pressed then
-        pressed = true
-        --- check if rune was already pressed, and if so delete it
-        if rune.pressed then
-          --- deactivate all keys from the rune in the grid_keys table
-          for k, key in ipairs(rune.keys) do
-            grid_keys[key.coord].active = false
-            grid_keys[key.coord].unclaimed = false
-          end
-          --- delete the rune
-          table.remove(runes, i)
-        end
-        break
+        pressed_keys = pressed_keys + 1
       end
-      --- if all of the keys in the rune are not pressed, then the rune is not pressed
-      pressed = false
     end
-    
-    if pressed then
-      rune.level = 12
-      print ("---------- rune pressed " .. rune.pattern .. " " .. tostring(pressed))
+    --- if one or more keys are pressed, mark the rune as pressed
+    if pressed_keys >= 1 then
+      if rune.pressed and pressed_keys > 1 then
+        --- if a rune was already pressed and another key of the same rune is pressed, delete it
+        for k, key in ipairs(rune.keys) do
+          grid_keys[key.coord].active = false
+          grid_keys[key.coord].unclaimed = false
+        end
+        --- delete the rune
+        table.remove(runes, i)
+      else
+        rune.pressed = true
+        i = i + 1
+      end
     else
-      rune.level = 2
-      print ("---------- rune not pressed " .. rune.pattern .. " " .. tostring(pressed))
+      rune.pressed = false
+      i = i + 1
     end
-
-    rune.pressed = pressed
+    if rune.pressed then
+      rune.level = 14
+    else
+      rune.level = 8
+    end
   end
-    grid_dirty = true  
+  grid_dirty = true  
 end
- 
 
 function g.key(x, y, z) ---------------------- g.key() is automatically called by norns
   --- used to identify the key in the grid_keys table, 
@@ -126,13 +125,10 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
   local coord =  x .. "," .. y
   local w, h = g.cols, g.rows
 
-  print("key " .. coord .. " pressed " .. tostring(z))
-
   local pressed = false
   if z == 1 then
     pressed = true
   end 
-
 
   ---  if the key is not in the grid_keys table, add it with default values
   if grid_keys[coord] == nil and pressed then
@@ -163,8 +159,8 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
   end
 
   parse_runes()
-
   check_runes()
+
   
   grid_dirty = true
 
@@ -207,7 +203,7 @@ function grid_redraw()
     local x, y, pressed, active, unclaimed = grid_key.x, grid_key.y, grid_key.pressed, grid_key.active, grid_key.unclaimed
     if active then
       if unclaimed then
-        g:led(x, y, 8)
+        g:led(x, y, 15)
       end
     else
       g:led(x, y, 0)
