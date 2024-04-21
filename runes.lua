@@ -90,6 +90,16 @@ function check_runes()
     for j, key in ipairs(rune.keys) do
       if grid_keys[key.coord].pressed then
         pressed = true
+        --- check if rune was already pressed, and if so delete it
+        if rune.pressed then
+          --- deactivate all keys from the rune in the grid_keys table
+          for k, key in ipairs(rune.keys) do
+            grid_keys[key.coord].active = false
+            grid_keys[key.coord].unclaimed = false
+          end
+          --- delete the rune
+          table.remove(runes, i)
+        end
         break
       end
       --- if all of the keys in the rune are not pressed, then the rune is not pressed
