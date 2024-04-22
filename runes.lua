@@ -39,6 +39,7 @@ function init() ------------------------------ init() is automatically called by
   screen_dirty = true ------------------------ ensure we only redraw when something changes
   screen_redraw_clock_id = clock.run(screen_redraw_clock) -- create a "screen_redraw_clock" and note the id
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
+  --- rune_animate_clock_id = clock.run(rune_animate_clock)
   reset()
 end
 
@@ -138,7 +139,7 @@ function parse_runes()
               end
               --- add the rune to the list of runes
               print ("create rune")
-              table.insert(runes, {pattern = pattern_name, keys = rune_keys, level = 15})
+              table.insert(runes, {pattern = pattern_name, keys = rune_keys})
               return true
             end
           end
@@ -165,7 +166,7 @@ function update_runes()
     end
     --- if one or more keys are pressed, process the rune
     if pressed_rune_keys >= 1 then
-      if rune.pressed and pressed_rune_keys == 2 then
+      if rune.pressed and pressed_rune_keys == 3 then
         --- if a rune was already pressed and another key of the same rune is pressed, delete it
         for k, key in ipairs(rune.keys) do
           grid_keys[key.coord].active = false
@@ -186,7 +187,6 @@ function update_runes()
   end
   grid_dirty = true  
 end
-
 
 function is_valid_location(rune, new_key)
 
@@ -342,7 +342,7 @@ function grid_redraw()
     for j, key in ipairs(rune.keys) do
       if rune.pressed then
         rune.level = 14
-      else
+      else 
         rune.level = 8
       end
       g:led(key.x, key.y, rune.level)
@@ -363,6 +363,28 @@ function grid_redraw()
 
   g:refresh()
 
+end
+
+function rune_animate_clock()
+  while true do
+    clock.sleep(1/15)
+    for i, rune in ipairs(runes) do
+      if not rune.pressed then
+        if rune.level_up then
+          rune.level = rune.level + 1
+          if rune.level >= 12 then
+            rune.level_up = false
+          end
+        else
+          rune.level = rune.level - 1
+          if rune.level <= 2 then
+            rune.level_up = true
+          end
+        end
+      end
+    end
+    grid_dirty = true
+  end
 end
 
 function grid_redraw_clock()
@@ -408,4 +430,5 @@ end
 function cleanup() --------------- cleanup() is automatically called on script close
   clock.cancel(screen_redraw_clock_id)
   clock.cancel(grid_redraw_clock_id)
+  clock.cancel(rune_animate_clock_id)
 end
