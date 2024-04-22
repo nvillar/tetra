@@ -206,12 +206,20 @@ function is_valid_location(rune, new_key)
       return false
     end
 
-    --- check if the new location is not occupied by an active/unclaimed key or another rune
-    if (grid_keys[new_coord].active or grid_keys[new_coord].unclaimed) then
+    self_overlap = false
+    --- allow the key to be placed on top of another key in the same rune
+    for j, rune_key in ipairs(rune.keys) do
+      if rune_key.x == new_x and rune_key.y == new_y then
+        self_overlap = true
+      end
+    end
+
+    --- check if the new location is not occupied by an active/unclaimed key or another rune,
+    if (grid_keys[new_coord].active or grid_keys[new_coord].unclaimed) and not self_overlap then
       print("occupied")
       return false
     end
-
+  
   end
   print("valid")
   return true
@@ -219,23 +227,33 @@ end
 
 
 function translate_rune(rune, new_key)
-  --- calculate the translation offsets
+  -- calculate the translation offsets
   local dx = new_key.x - get_pressed_rune_key(rune).x
   local dy = new_key.y - get_pressed_rune_key(rune).y
-  
-  --- translate each key in the rune
+
+  -- calculate the new locations for each key in the rune
+  local new_locations = {}
   for i, key in ipairs(rune.keys) do
     local new_x = key.x + dx
     local new_y = key.y + dy
     local new_coord = new_x .. "," .. new_y
-    --- update the key's location
+    new_locations[i] = {x = new_x, y = new_y, coord = new_coord}
+  end
+
+  -- update the keys at the old locations
+  for i, key in ipairs(rune.keys) do
     grid_keys[key.coord].active = false
     grid_keys[key.coord].unclaimed = false
-    grid_keys[new_coord].active = true
-    grid_keys[new_coord].unclaimed = false
-    rune.keys[i].x = new_x
-    rune.keys[i].y = new_y
-    rune.keys[i].coord = new_coord
+  end
+
+  -- update the keys at the new locations
+  for i, key in ipairs(rune.keys) do
+    local new_location = new_locations[i]
+    grid_keys[new_location.coord].active = true
+    grid_keys[new_location.coord].unclaimed = false
+    key.x = new_location.x
+    key.y = new_location.y
+    key.coord = new_location.coord
   end
 end
 
@@ -262,6 +280,36 @@ function get_pressed_rune_key(rune)
   return nil
 end
 
+--- print the state of the grid, with a visual representation of the key state
+--- using 'a' for active false, 'A' for active true, 'p' for pressed false, 'P' for pressed true
+--- and 'u' for unclaimed false, 'U' for unclaimed true
+function print_grid()
+  local w, h = g.cols, g.rows
+  for y = 1, h do
+    local line = ""
+    for x = 1, w do
+      local coord = x .. "," .. y
+      local key = grid_keys[coord]
+      if key.active then
+          line = line .. "A"
+      else
+          line = line .. "a"
+      end
+      if key.pressed then
+        line = line .. "P"
+      else
+        line = line .. "p"
+      end
+      if key.unclaimed then
+        line = line .. "U"
+      else
+        line = line .. "u"
+      end
+      line = line .. " "
+    end
+    print(line)
+  end
+end
 
 
 function enc(e, d) --------------- enc() is automatically called by norns
