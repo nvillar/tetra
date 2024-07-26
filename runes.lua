@@ -8,8 +8,6 @@
 -- >> e3:
 
 
----- TODO: ALLOW 4-key shape to be created at once (special case for 4 keys, 2 and 3 at a time don't happen)
-
 patterns = {
   ["r0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
   ["i0"]   = {{1,1}, {1,2}, {1,3}, {1,4}},    -- Line
@@ -32,6 +30,10 @@ patterns = {
   ["j270"] = {{1,1}, {2,1}, {3,1}, {1,0}},
 }
 
+voice_ids = {}
+max_voices = 16
+
+engine.name = 'PolySub'
 g = grid.connect()
 
 function init() ------------------------------ init() is automatically called by norns
@@ -40,13 +42,15 @@ function init() ------------------------------ init() is automatically called by
   screen_redraw_clock_id = clock.run(screen_redraw_clock) -- create a "screen_redraw_clock" and note the id
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
   --- rune_animate_clock_id = clock.run(rune_animate_clock)
+
   reset()
 end
-
 
 function reset()
   local w, h = g.cols, g.rows
   print('--- reset ---')
+  engine.stopAll()
+  voice_ids = {}
   grid_keys = {}
   --- init grid_keys table
   for x = 1, w do
@@ -89,16 +93,63 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
       reset()
       return
   end
+
+  --- print("Number of free voices: " .. get_number_of_free_voices())
   --- parse for new runes
-  parse_runes()
+ parse_runes()
+  
   --- check for interaction with runes (pressing, deleting)
   update_runes()
-
+  
   local pressed_runes = get_pressed_runes()
+  
+  --- if a rune is pressed and a available key is pressed, translate the rune
   if pressed and #pressed_runes == 1 and not grid_keys[coord].active then
     local rune = pressed_runes[1]
     if is_valid_location(rune, grid_keys[coord]) then
       translate_rune(rune, grid_keys[coord])
+    end
+  end
+
+  for i, rune in ipairs(runes) do
+    if not rune.playing and rune.pressed then
+      if rune.voice_id == nil then
+        rune.voice_id = get_free_voice_id()
+      end
+      if rune.frequency == nil then
+        rune.frequency = get_random_note_in_c_minor_pentatonic_scale_as_hz()
+      end
+      if rune.timbre == nil then
+        if rune.pattern == "r0" then
+          engine.shape(0)
+          engine.timbre(0)
+        elseif rune.pattern == "i0" or rune.pattern == "i90" then
+          engine.shape(0.15)
+          engine.timbre(0.15)
+        elseif rune.pattern == "z0" or rune.pattern == "z90" then
+          engine.shape(0.3)
+          engine.timbre(0.3)
+        elseif rune.pattern == "s0" or rune.pattern == "s90" then
+          engine.shape(0.45)
+          engine.timbre(0.45)
+        elseif rune.pattern == "t0" or rune.pattern == "t90" or rune.pattern == "t180" or rune.pattern == "t270" then
+          engine.shape(0.5)
+          engine.timbre(0.5)
+        elseif rune.pattern == "l0" or rune.pattern == "l90" or rune.pattern == "l180" or rune.pattern == "l270" then
+          engine.shape(0.65)
+          engine.timbre(0.65)
+        elseif rune.pattern == "j0" or rune.pattern == "j90" or rune.pattern == "j180" or rune.pattern == "j270" then
+          engine.shape(0.8)
+          engine.timbre(0.8)
+        end
+      end
+
+      engine.timbre(rune.timbre)
+      engine.solo(rune.voice_id, rune.frequency)
+      rune.playing = true
+    elseif rune.playing and not rune.pressed then
+      engine.stop(rune.voice_id)
+      rune.playing = false
     end
   end
 
@@ -139,7 +190,7 @@ function parse_runes()
               end
               --- add the rune to the list of runes
               print ("create rune")
-              table.insert(runes, {pattern = pattern_name, keys = rune_keys})
+              table.insert(runes, {new = true, pattern = pattern_name, keys = rune_keys, playing= false})
               return true
             end
           end
@@ -166,13 +217,20 @@ function update_runes()
     end
     --- if one or more keys are pressed, process the rune
     if pressed_rune_keys >= 1 then
-      if rune.pressed and pressed_rune_keys == 3 then
+      --- if rune is still new, 
+      if rune.pressed and pressed_rune_keys == 2 and rune.new == false then
         --- if a rune was already pressed and another key of the same rune is pressed, delete it
         for k, key in ipairs(rune.keys) do
           grid_keys[key.coord].active = false
           grid_keys[key.coord].unclaimed = false
         end
         print("deleted rune")
+
+        if rune.voice_id ~= nil then
+          engine.stop(rune.voice_id)
+          release_voice_id(rune.voice_id)
+        end
+
         --- delete the rune
         table.remove(runes, i)
         break
@@ -182,6 +240,7 @@ function update_runes()
       end
     else
       rune.pressed = false
+      rune.new = false
       i = i + 1
     end
   end
@@ -216,12 +275,10 @@ function is_valid_location(rune, new_key)
 
     --- check if the new location is not occupied by an active/unclaimed key or another rune,
     if (grid_keys[new_coord].active or grid_keys[new_coord].unclaimed) and not self_overlap then
-      print("occupied")
       return false
     end
   
   end
-  print("valid")
   return true
 end
 
@@ -309,6 +366,38 @@ function print_grid()
     end
     print(line)
   end
+end
+
+--- get the next free voice id. There are a maximum of 16 voices. If all voices are taken, return nil
+-- otherwise, return the next free voice id
+function get_free_voice_id()
+  for i = 1, 16 do
+    if voice_ids[i] == nil then
+      voice_ids[i] = true
+      return i
+    end
+  end
+  return nil
+end
+
+-- release a voice id
+function release_voice_id(id)
+  voice_ids[id] = nil
+end
+
+function get_number_of_free_voices()
+  local count = 0
+  for i = 1, max_voices do
+    if voice_ids[i] == nil then
+      count = count + 1
+    end
+  end
+  return count
+end
+
+function get_random_note_in_c_minor_pentatonic_scale_as_hz()
+  local notes = {261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25}
+  return notes[math.random(1, #notes)]
 end
 
 
