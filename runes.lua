@@ -116,36 +116,43 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
       if rune.voice_id == nil then
         rune.voice_id = get_free_voice_id()
       end
-      if rune.frequency == nil then
-        rune.frequency = get_random_note_in_c_minor_pentatonic_scale_as_hz()
+      if rune.engine_frequency == nil then
+        rune.engine_frequency = get_random_note_in_c_minor_pentatonic_scale_as_hz()
       end
-      if rune.timbre == nil then
+      if rune.engine_timbre == nil then
+
+        --- default
+        rune.engine_release = 1
+
         if rune.pattern == "r0" then
-          engine.shape(0)
-          engine.timbre(0)
+          rune.engine_shape = 0
+          rune.engine_timbre = 0
+          rune.engine_frequency = rune.engine_frequency / 6
         elseif rune.pattern == "i0" or rune.pattern == "i90" then
-          engine.shape(0.15)
-          engine.timbre(0.15)
+          rune.engine_shape = 0.15
+          rune.engine_timbre = 0.15
+          rune.engine_release = 0.2
         elseif rune.pattern == "z0" or rune.pattern == "z90" then
-          engine.shape(0.3)
-          engine.timbre(0.3)
+          rune.engine_shape = 0.3
+          rune.engine_timbre = 0.3
         elseif rune.pattern == "s0" or rune.pattern == "s90" then
-          engine.shape(0.45)
-          engine.timbre(0.45)
+          rune.engine_shape = 0.45
+          rune.engine_timbre = 0.45
         elseif rune.pattern == "t0" or rune.pattern == "t90" or rune.pattern == "t180" or rune.pattern == "t270" then
-          engine.shape(0.5)
-          engine.timbre(0.5)
+          rune.engine_shape = 0.6
+          rune.engine_timbre = 0.6
         elseif rune.pattern == "l0" or rune.pattern == "l90" or rune.pattern == "l180" or rune.pattern == "l270" then
-          engine.shape(0.65)
-          engine.timbre(0.65)
+          rune.engine_shape = 0.65
+          rune.engine_timbre = 0.65
         elseif rune.pattern == "j0" or rune.pattern == "j90" or rune.pattern == "j180" or rune.pattern == "j270" then
-          engine.shape(0.8)
-          engine.timbre(0.8)
+          rune.engine_shape = 0.8
+          rune.engine_timbre = 0.8
         end
       end
-
-      engine.timbre(rune.timbre)
-      engine.solo(rune.voice_id, rune.frequency)
+      engine.ampRel(rune.engine_release)
+      engine.shape(rune.engine_shape)
+      engine.timbre(rune.engine_timbre)
+      engine.solo(rune.voice_id, rune.engine_frequency)
       rune.playing = true
     elseif rune.playing and not rune.pressed then
       engine.stop(rune.voice_id)
@@ -398,6 +405,11 @@ end
 function get_random_note_in_c_minor_pentatonic_scale_as_hz()
   local notes = {261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25}
   return notes[math.random(1, #notes)]
+end
+
+function get_note_in_c_minor_pentatonic_scale_as_hz(index)
+  local notes = {261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25}
+  return notes[index]
 end
 
 
