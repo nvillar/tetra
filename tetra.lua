@@ -39,8 +39,9 @@ patterns = {
 grid_keys = {}
 
 voice_ids = {}
-max_voices = 3
+max_voices = 16
 delete_keypress = 3
+focus_tetra = nil
 
 engine.name = 'PolySub'
 g = grid.connect()
@@ -69,6 +70,7 @@ function reset()
   engine.stopAll()
   voice_ids = {}
   grid_keys = {}
+  focus_tetra = nil
   --- init grid_keys table
   for x = 1, w do
     for y = 1, h do
@@ -139,7 +141,17 @@ function g.key(x, y, z)
 
   --- get a list of tetras that are currently pressed
   local pressed_tetras = get_pressed_tetras()
-  
+
+  if pressed and #pressed_tetras == 1 then
+    focus_tetra = pressed_tetras[1]
+
+    print("focus " .. pressed_tetras[1].pattern)
+  -- elseif not pressed and #pressed_tetras == 0 then
+  --   focus_tetra = nil
+  --   message = "focus none"
+  --   screen_dirty = true
+  end
+
   --- if a tetra is pressed and a available key is pressed, translate the tetra
   if pressed and #pressed_tetras == 1 and not grid_keys[coord].lit then
     local tetra = pressed_tetras[1]
@@ -169,6 +181,7 @@ function g.key(x, y, z)
   end
 
   grid_dirty = true
+  screen_dirty = true
 
 end
   
@@ -299,6 +312,9 @@ function update_tetras()
         end
         print("deleted tetra")
 
+        --- tetra would have been focused, so reset focus
+        focus_tetra = nil
+
         if tetra.voice_id ~= nil then
           engine.stop(tetra.voice_id)
           release_voice_id(tetra.voice_id)
@@ -427,6 +443,7 @@ function get_pressed_tetra_key(tetra)
   return nil
 end
 
+
 -------------------------------------------------------------------------------
 --- voice management and music functions
 -------------------------------------------------------------------------------
@@ -553,8 +570,10 @@ function grid_redraw()
     for j, key in ipairs(tetra.keys) do
       if tetra.pressed then
         tetra.level = 14
+      elseif tetra == focus_tetra then
+        tetra.level = 10
       else 
-        tetra.level = 8
+        tetra.level = 4
       end
       g:led(key.x, key.y, tetra.level)
     end
@@ -619,6 +638,15 @@ function screen_redraw_clock() ----- a clock that draws space
 end
 
 function redraw() -------------- redraw() is automatically called by norns
+
+  
+  local message = "X"
+
+  if focus_tetra ~= nil then
+    print("redraw focus " .. focus_tetra.pattern)
+    message = focus_tetra.pattern
+  end
+
   screen.clear() --------------- clear space
   screen.aa(1) ----------------- enable anti-aliasing
   screen.font_face(1) ---------- set the font face to "04B_03"
