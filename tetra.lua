@@ -41,7 +41,7 @@ function init() ------------------------------ init() is automatically called by
   screen_dirty = true ------------------------ ensure we only redraw when something changes
   screen_redraw_clock_id = clock.run(screen_redraw_clock) -- create a "screen_redraw_clock" and note the id
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
-  --- rune_animate_clock_id = clock.run(rune_animate_clock)
+  --- tetra_animate_clock_id = clock.run(tetra_animate_clock)
 
   reset()
 end
@@ -59,7 +59,7 @@ function reset()
       grid_keys[coord] = {x = x, y = y, pressed = false, active = false, unclaimed = false}
     end
   end
-  runes = {}
+  tetras = {}
   grid_dirty = true
 end
 
@@ -79,8 +79,8 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
     grid_keys[coord].active = false
     grid_keys[coord].unclaimed = false
   --- toggle on active state if the key is pressed and is not active (only on press-down)
-  --- and no runes are pressed
-  elseif pressed and not grid_keys[coord].active and #get_pressed_runes() == 0 then
+  --- and no tetras are pressed
+  elseif pressed and not grid_keys[coord].active and #get_pressed_tetras() == 0 then
     grid_keys[coord].active = true
     grid_keys[coord].unclaimed = true
   end
@@ -95,68 +95,68 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
   end
 
   --- print("Number of free voices: " .. get_number_of_free_voices())
-  --- parse for new runes
- parse_runes()
+  --- parse for new tetras
+ parse_tetras()
   
-  --- check for interaction with runes (pressing, deleting)
-  update_runes()
+  --- check for interaction with tetras (pressing, deleting)
+  update_tetras()
   
-  local pressed_runes = get_pressed_runes()
+  local pressed_tetras = get_pressed_tetras()
   
-  --- if a rune is pressed and a available key is pressed, translate the rune
-  if pressed and #pressed_runes == 1 and not grid_keys[coord].active then
-    local rune = pressed_runes[1]
-    if is_valid_location(rune, grid_keys[coord]) then
-      translate_rune(rune, grid_keys[coord])
+  --- if a tetra is pressed and a available key is pressed, translate the tetra
+  if pressed and #pressed_tetras == 1 and not grid_keys[coord].active then
+    local tetra = pressed_tetras[1]
+    if is_valid_location(tetra, grid_keys[coord]) then
+      translate_tetra(tetra, grid_keys[coord])
     end
   end
 
-  for i, rune in ipairs(runes) do
-    if not rune.playing and rune.pressed then
-      if rune.voice_id == nil then
-        rune.voice_id = get_free_voice_id()
+  for i, tetra in ipairs(tetras) do
+    if not tetra.playing and tetra.pressed then
+      if tetra.voice_id == nil then
+        tetra.voice_id = get_free_voice_id()
       end
-      if rune.engine_frequency == nil then
-        rune.engine_frequency = get_random_note_in_c_minor_pentatonic_scale_as_hz()
+      if tetra.engine_frequency == nil then
+        tetra.engine_frequency = get_random_note_in_c_minor_pentatonic_scale_as_hz()
       end
-      if rune.engine_timbre == nil then
+      if tetra.engine_timbre == nil then
 
         --- default
-        rune.engine_release = 1
+        tetra.engine_release = 1
 
-        if rune.pattern == "r0" then
-          rune.engine_shape = 0
-          rune.engine_timbre = 0
-          rune.engine_frequency = rune.engine_frequency / 6
-        elseif rune.pattern == "i0" or rune.pattern == "i90" then
-          rune.engine_shape = 0.15
-          rune.engine_timbre = 0.15
-          rune.engine_release = 0.2
-        elseif rune.pattern == "z0" or rune.pattern == "z90" then
-          rune.engine_shape = 0.3
-          rune.engine_timbre = 0.3
-        elseif rune.pattern == "s0" or rune.pattern == "s90" then
-          rune.engine_shape = 0.45
-          rune.engine_timbre = 0.45
-        elseif rune.pattern == "t0" or rune.pattern == "t90" or rune.pattern == "t180" or rune.pattern == "t270" then
-          rune.engine_shape = 0.6
-          rune.engine_timbre = 0.6
-        elseif rune.pattern == "l0" or rune.pattern == "l90" or rune.pattern == "l180" or rune.pattern == "l270" then
-          rune.engine_shape = 0.65
-          rune.engine_timbre = 0.65
-        elseif rune.pattern == "j0" or rune.pattern == "j90" or rune.pattern == "j180" or rune.pattern == "j270" then
-          rune.engine_shape = 0.8
-          rune.engine_timbre = 0.8
+        if tetra.pattern == "r0" then
+          tetra.engine_shape = 0
+          tetra.engine_timbre = 0
+          tetra.engine_frequency = tetra.engine_frequency / 6
+        elseif tetra.pattern == "i0" or tetra.pattern == "i90" then
+          tetra.engine_shape = 0.15
+          tetra.engine_timbre = 0.15
+          tetra.engine_release = 0.2
+        elseif tetra.pattern == "z0" or tetra.pattern == "z90" then
+          tetra.engine_shape = 0.3
+          tetra.engine_timbre = 0.3
+        elseif tetra.pattern == "s0" or tetra.pattern == "s90" then
+          tetra.engine_shape = 0.45
+          tetra.engine_timbre = 0.45
+        elseif tetra.pattern == "t0" or tetra.pattern == "t90" or tetra.pattern == "t180" or tetra.pattern == "t270" then
+          tetra.engine_shape = 0.6
+          tetra.engine_timbre = 0.6
+        elseif tetra.pattern == "l0" or tetra.pattern == "l90" or tetra.pattern == "l180" or tetra.pattern == "l270" then
+          tetra.engine_shape = 0.65
+          tetra.engine_timbre = 0.65
+        elseif tetra.pattern == "j0" or tetra.pattern == "j90" or tetra.pattern == "j180" or tetra.pattern == "j270" then
+          tetra.engine_shape = 0.8
+          tetra.engine_timbre = 0.8
         end
       end
-      engine.ampRel(rune.engine_release)
-      engine.shape(rune.engine_shape)
-      engine.timbre(rune.engine_timbre)
-      engine.solo(rune.voice_id, rune.engine_frequency)
-      rune.playing = true
-    elseif rune.playing and not rune.pressed then
-      engine.stop(rune.voice_id)
-      rune.playing = false
+      engine.ampRel(tetra.engine_release)
+      engine.shape(tetra.engine_shape)
+      engine.timbre(tetra.engine_timbre)
+      engine.solo(tetra.voice_id, tetra.engine_frequency)
+      tetra.playing = true
+    elseif tetra.playing and not tetra.pressed then
+      engine.stop(tetra.voice_id)
+      tetra.playing = false
     end
   end
 
@@ -164,40 +164,40 @@ function g.key(x, y, z) ---------------------- g.key() is automatically called b
 
 end
 
---- parse_runes() is called when a key is pressed
---- it checks if anew rune has been formed in the grid
+--- parse_tetras() is called when a key is pressed
+--- it checks if anew tetra has been formed in the grid
 --- by active, uncloaimed grid keys
-function parse_runes()
-    --- check if a rune is present in the grid
+function parse_tetras()
+    --- check if a tetra is present in the grid
     for pattern_name, pattern in pairs(patterns) do
       for coord, grid_key in pairs(grid_keys) do
         local x, y, unclaimed = grid_key.x, grid_key.y, grid_key.unclaimed
-        --- a rune can only be formed from unclaimed keys
+        --- a tetra can only be formed from unclaimed keys
         if unclaimed then
           --- check if the pattern matches a set of active, unclaimed keys
           for i, pattern_key in ipairs(pattern) do
             local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
-            local rune_key_x, rune_key_y = x - pattern_x + 1, y - pattern_y + 1
-            local rune_key_coord = rune_key_x .. "," .. rune_key_y
+            local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
+            local tetra_key_coord = tetra_key_x .. "," .. tetra_key_y
             --- if the key is not present in the grid or is not active and unclaimed, break
-            if grid_keys[rune_key_coord] == nil or not grid_keys[rune_key_coord].unclaimed or not grid_keys[rune_key_coord].active then
+            if grid_keys[tetra_key_coord] == nil or not grid_keys[tetra_key_coord].unclaimed or not grid_keys[tetra_key_coord].active then
               break
             end
-            --- if the last key in the pattern is found, create the rune
+            --- if the last key in the pattern is found, create the tetra
             if i == #pattern then
-              --- keep track of the keys that form the rune
-              rune_keys = {}
+              --- keep track of the keys that form the tetra
+              tetra_keys = {}
               for i, pattern_key in ipairs(pattern) do
                 local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
-                local rune_key_x, rune_key_y = x - pattern_x + 1, y - pattern_y + 1
-                local rune_key_coord = rune_key_x .. "," .. rune_key_y
-                table.insert(rune_keys, {coord = rune_key_coord, x = rune_key_x, y = rune_key_y})
+                local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
+                local tetra_key_coord = tetra_key_x .. "," .. tetra_key_y
+                table.insert(tetra_keys, {coord = tetra_key_coord, x = tetra_key_x, y = tetra_key_y})
                 --- mark the key as claimed
-                grid_keys[rune_key_coord].unclaimed = false
+                grid_keys[tetra_key_coord].unclaimed = false
               end
-              --- add the rune to the list of runes
-              print ("create rune")
-              table.insert(runes, {new = true, pattern = pattern_name, keys = rune_keys, playing= false})
+              --- add the tetra to the list of tetras
+              print ("create tetra")
+              table.insert(tetras, {new = true, pattern = pattern_name, keys = tetra_keys, playing= false})
               return true
             end
           end
@@ -207,60 +207,60 @@ function parse_runes()
     return false
 end
 
---- update_runes() is called when a key is pressed
---- it checks if a rune is pressed or deleted
-function update_runes()
-  --- use a while loop to iterate over the runes instead of a for loop
-  --- because we may need to delete runes while iterating
+--- update_tetras() is called when a key is pressed
+--- it checks if a tetra is pressed or deleted
+function update_tetras()
+  --- use a while loop to iterate over the tetras instead of a for loop
+  --- because we may need to delete tetras while iterating
   local i = 1
-  while i <= #runes do
-    local rune = runes[i]
-    local pressed_rune_keys = 0
-    for j, key in ipairs(rune.keys) do
-      --- count the number of keys in the rune that are pressed
+  while i <= #tetras do
+    local tetra = tetras[i]
+    local pressed_tetra_keys = 0
+    for j, key in ipairs(tetra.keys) do
+      --- count the number of keys in the tetra that are pressed
       if grid_keys[key.coord].pressed then
-        pressed_rune_keys = pressed_rune_keys + 1
+        pressed_tetra_keys = pressed_tetra_keys + 1
       end
     end
-    --- if one or more keys are pressed, process the rune
-    if pressed_rune_keys >= 1 then
-      --- if rune is still new, 
-      if rune.pressed and pressed_rune_keys == 2 and rune.new == false then
-        --- if a rune was already pressed and another key of the same rune is pressed, delete it
-        for k, key in ipairs(rune.keys) do
+    --- if one or more keys are pressed, process the tetra
+    if pressed_tetra_keys >= 1 then
+      --- if tetra is still new, 
+      if tetra.pressed and pressed_tetra_keys == 2 and tetra.new == false then
+        --- if a tetra was already pressed and another key of the same tetra is pressed, delete it
+        for k, key in ipairs(tetra.keys) do
           grid_keys[key.coord].active = false
           grid_keys[key.coord].unclaimed = false
         end
-        print("deleted rune")
+        print("deleted tetra")
 
-        if rune.voice_id ~= nil then
-          engine.stop(rune.voice_id)
-          release_voice_id(rune.voice_id)
+        if tetra.voice_id ~= nil then
+          engine.stop(tetra.voice_id)
+          release_voice_id(tetra.voice_id)
         end
 
-        --- delete the rune
-        table.remove(runes, i)
+        --- delete the tetra
+        table.remove(tetras, i)
         break
       else
-        rune.pressed = true
+        tetra.pressed = true
         i = i + 1
       end
     else
-      rune.pressed = false
-      rune.new = false
+      tetra.pressed = false
+      tetra.new = false
       i = i + 1
     end
   end
   grid_dirty = true  
 end
 
-function is_valid_location(rune, new_key)
+function is_valid_location(tetra, new_key)
 
   --- get the pressed keys 
   --- calculate the translation offsets
-  local dx = new_key.x - get_pressed_rune_key(rune).x
-  local dy = new_key.y - get_pressed_rune_key(rune).y
-  for i, key in ipairs(rune.keys) do
+  local dx = new_key.x - get_pressed_tetra_key(tetra).x
+  local dy = new_key.y - get_pressed_tetra_key(tetra).y
+  for i, key in ipairs(tetra.keys) do
     --- calculate the new location for the key
     local new_x = key.x + dx
     local new_y = key.y + dy
@@ -273,14 +273,14 @@ function is_valid_location(rune, new_key)
     end
 
     self_overlap = false
-    --- allow the key to be placed on top of another key in the same rune
-    for j, rune_key in ipairs(rune.keys) do
-      if rune_key.x == new_x and rune_key.y == new_y then
+    --- allow the key to be placed on top of another key in the same tetra
+    for j, tetra_key in ipairs(tetra.keys) do
+      if tetra_key.x == new_x and tetra_key.y == new_y then
         self_overlap = true
       end
     end
 
-    --- check if the new location is not occupied by an active/unclaimed key or another rune,
+    --- check if the new location is not occupied by an active/unclaimed key or another tetra,
     if (grid_keys[new_coord].active or grid_keys[new_coord].unclaimed) and not self_overlap then
       return false
     end
@@ -290,14 +290,14 @@ function is_valid_location(rune, new_key)
 end
 
 
-function translate_rune(rune, new_key)
+function translate_tetra(tetra, new_key)
   -- calculate the translation offsets
-  local dx = new_key.x - get_pressed_rune_key(rune).x
-  local dy = new_key.y - get_pressed_rune_key(rune).y
+  local dx = new_key.x - get_pressed_tetra_key(tetra).x
+  local dy = new_key.y - get_pressed_tetra_key(tetra).y
 
-  -- calculate the new locations for each key in the rune
+  -- calculate the new locations for each key in the tetra
   local new_locations = {}
-  for i, key in ipairs(rune.keys) do
+  for i, key in ipairs(tetra.keys) do
     local new_x = key.x + dx
     local new_y = key.y + dy
     local new_coord = new_x .. "," .. new_y
@@ -305,13 +305,13 @@ function translate_rune(rune, new_key)
   end
 
   -- update the keys at the old locations
-  for i, key in ipairs(rune.keys) do
+  for i, key in ipairs(tetra.keys) do
     grid_keys[key.coord].active = false
     grid_keys[key.coord].unclaimed = false
   end
 
   -- update the keys at the new locations
-  for i, key in ipairs(rune.keys) do
+  for i, key in ipairs(tetra.keys) do
     local new_location = new_locations[i]
     grid_keys[new_location.coord].active = true
     grid_keys[new_location.coord].unclaimed = false
@@ -322,20 +322,20 @@ function translate_rune(rune, new_key)
 end
 
 
-function get_pressed_runes()
-  local pressed_runes = {}
-  for i, rune in ipairs(runes) do
-    if rune.pressed then
-      table.insert(pressed_runes, rune)
+function get_pressed_tetras()
+  local pressed_tetras = {}
+  for i, tetra in ipairs(tetras) do
+    if tetra.pressed then
+      table.insert(pressed_tetras, tetra)
     end
   end
-  return pressed_runes
+  return pressed_tetras
 end
 
 
-function get_pressed_rune_key(rune)
-    if rune.pressed then
-      for j, key in ipairs(rune.keys) do
+function get_pressed_tetra_key(tetra)
+    if tetra.pressed then
+      for j, key in ipairs(tetra.keys) do
         if grid_keys[key.coord].pressed then
           return key
         end
@@ -438,15 +438,15 @@ end
 function grid_redraw()
   g:all(0)
 
-  --- draw the runes
-  for i, rune in ipairs(runes) do
-    for j, key in ipairs(rune.keys) do
-      if rune.pressed then
-        rune.level = 14
+  --- draw the tetras
+  for i, tetra in ipairs(tetras) do
+    for j, key in ipairs(tetra.keys) do
+      if tetra.pressed then
+        tetra.level = 14
       else 
-        rune.level = 8
+        tetra.level = 8
       end
-      g:led(key.x, key.y, rune.level)
+      g:led(key.x, key.y, tetra.level)
     end
   end
   
@@ -466,20 +466,20 @@ function grid_redraw()
 
 end
 
-function rune_animate_clock()
+function tetra_animate_clock()
   while true do
     clock.sleep(1/15)
-    for i, rune in ipairs(runes) do
-      if not rune.pressed then
-        if rune.level_up then
-          rune.level = rune.level + 1
-          if rune.level >= 12 then
-            rune.level_up = false
+    for i, tetra in ipairs(tetras) do
+      if not tetra.pressed then
+        if tetra.level_up then
+          tetra.level = tetra.level + 1
+          if tetra.level >= 12 then
+            tetra.level_up = false
           end
         else
-          rune.level = rune.level - 1
-          if rune.level <= 2 then
-            rune.level_up = true
+          tetra.level = tetra.level - 1
+          if tetra.level <= 2 then
+            tetra.level_up = true
           end
         end
       end
@@ -531,5 +531,5 @@ end
 function cleanup() --------------- cleanup() is automatically called on script close
   clock.cancel(screen_redraw_clock_id)
   clock.cancel(grid_redraw_clock_id)
-  clock.cancel(rune_animate_clock_id)
+  clock.cancel(tetra_animate_clock_id)
 end
