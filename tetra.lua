@@ -7,6 +7,8 @@
 -- >> e2:
 -- >> e3:
 
+music = require("musicutil")
+engine.name = 'PolySub'
 
 patterns = {
   ["r0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
@@ -35,15 +37,16 @@ patterns = {
 --- pressed: true if the key is currently pressed'
 --- lit: true if the key light is lit
 --- free: true if the key is not part of a tetra
-
 grid_keys = {}
 
 voice_ids = {}
 max_voices = 16
+
+scale_notes = {}
+
 delete_keypress = 3
 focus_tetra = nil
 
-engine.name = 'PolySub'
 g = grid.connect()
 
 -------------------------------------------------------------------------------
@@ -57,6 +60,27 @@ function init()
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
   --- tetra_animate_clock_id = clock.run(tetra_animate_clock)
 
+
+  local scale_names = {}
+  for i = 1, #music.SCALES do
+  table.insert(scale_names, music.SCALES[i].name)
+  end
+  -- setting root notes using params
+    params:add{type = "number", id = "root_note", name = "root note",
+    min = 0, max = 127, default = 36, formatter = function(param) return music.note_num_to_name(param:get(), true) end,
+    action = function() build_scale() end} 
+
+  -- setting scale type using params
+  params:add{type = "option", id = "scale", name = "scale",
+    options = scale_names, default = 1,
+    action = function() build_scale() end}
+  
+  -- setting how many octaves are included from the scale, starting from the root note
+  params:add{type = "number", id = "scale_octaves", name = "octaves",
+    min = 1, max = 8, default = 5,
+    action = function() build_scale() end}
+
+  build_scale()
   reset()
 end
 
@@ -138,18 +162,13 @@ function g.key(x, y, z)
   --- check for interaction with tetras (pressing, deleting)
   update_tetras()
   
-
   --- get a list of tetras that are currently pressed
   local pressed_tetras = get_pressed_tetras()
 
+  --- if only a single tetra is pressed, focus on it
   if pressed and #pressed_tetras == 1 then
     focus_tetra = pressed_tetras[1]
-
     print("focus " .. pressed_tetras[1].pattern)
-  -- elseif not pressed and #pressed_tetras == 0 then
-  --   focus_tetra = nil
-  --   message = "focus none"
-  --   screen_dirty = true
   end
 
   --- if a tetra is pressed and a available key is pressed, translate the tetra
@@ -172,7 +191,8 @@ function g.key(x, y, z)
       engine.ampRel(tetra.engine_release)
       engine.shape(tetra.engine_shape)
       engine.timbre(tetra.engine_timbre)
-      engine.solo(tetra.voice_id, tetra.engine_frequency)
+      engine.solo(tetra.voice_id, music.note_num_to_freq(tetra.engine_note))
+      
       tetra.playing = true
     elseif tetra.playing and not tetra.pressed then
       engine.stop(tetra.voice_id)
@@ -247,7 +267,7 @@ function create_tetra(pattern_name, keys)
   tetra.pattern = pattern_name
   tetra.keys = keys
   tetra.playing = false
-  tetra.engine_frequency = get_random_note_in_c_minor_pentatonic_scale_as_hz()    
+  tetra.engine_note = get_random_note_in_scale()
   tetra.engine_release = 1
   tetra.engine_attack = 0.1
   tetra.engine_shape = 0
@@ -257,7 +277,6 @@ function create_tetra(pattern_name, keys)
   if tetra.pattern == "r0" then
     tetra.engine_shape = 0
     tetra.engine_timbre = 0
-    tetra.engine_frequency = tetra.engine_frequency / 6
   elseif tetra.pattern == "i0" or tetra.pattern == "i90" then
     tetra.engine_shape = 0.15
     tetra.engine_timbre = 0.15
@@ -443,7 +462,6 @@ function get_pressed_tetra_key(tetra)
   return nil
 end
 
-
 -------------------------------------------------------------------------------
 --- voice management and music functions
 -------------------------------------------------------------------------------
@@ -479,22 +497,63 @@ function get_number_of_free_voices()
   end
   return count
 end
--------------------------------------------------------------------------------
---- get a random note in the C minor pentatonic scale as hz
--------------------------------------------------------------------------------
-function get_random_note_in_c_minor_pentatonic_scale_as_hz()
-  local notes = {261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25}
-  return notes[math.random(1, #notes)]
-end
--------------------------------------------------------------------------------
---- get a note in the C minor pentatonic scale as hz
--------------------------------------------------------------------------------
-function get_note_in_c_minor_pentatonic_scale_as_hz(index)
-  local notes = {261.63, 293.66, 329.63, 392.00, 440.00, 493.88, 523.25}
-  return notes[index]
-end
--------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+--- build the scale
+-------------------------------------------------------------------------------
+function build_scale()
+  scale_notes = music.generate_scale(params:get("root_note"), params:get("scale"), params:get("scale_octaves")) -- builds scale
+  --- print all the notes in the scale
+  print("--- scale notes ---")
+  for i, note in ipairs(scale_notes) do
+    print(music.note_num_to_name(note, true))
+  end
+end
+
+-------------------------------------------------------------------------------
+--- given a note, return the the next note in the scale
+-------------------------------------------------------------------------------
+function get_next_note_in_scale(note)
+  note = music.snap_note_to_array(note, scale_notes)
+  for i, scale_note in ipairs(scale_notes) do
+    if scale_note == note then
+      --- if the note is the last note in the scale, return the last note
+      if i == #scale_notes then
+        return scale_notes[#scale_notes]
+      else
+        return scale_notes[i + 1]
+      end
+    end
+  end
+end
+-------------------------------------------------------------------------------
+--- given a note, return the the next note in the scale
+-------------------------------------------------------------------------------
+function get_previous_note_in_scale(note)
+  note = music.snap_note_to_array(note, scale_notes)
+  for i, scale_note in ipairs(scale_notes) do
+    if scale_note == note then
+      --- if the note is the first note in the scale, return the first note
+      if i == 1 then
+        return scale_notes[1]
+      else
+        return scale_notes[i - 1]
+      end
+    end
+  end
+end
+-------------------------------------------------------------------------------
+--- get a random note from the scale
+-------------------------------------------------------------------------------
+function get_random_note_in_scale()
+  --- get a random note from the middle third section of the scale
+  --- to avoid excessively high or low notes
+  local start = math.floor(#scale_notes / 3)
+  local stop = math.floor(2 * #scale_notes / 3)
+  local note = scale_notes[math.random(start, stop)]
+  return note
+end
+-------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
 --- norns controls event handlers
@@ -502,15 +561,23 @@ end
 --- encoder 
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
-  if e == 1 then turn(e, d) end -- turn encoder 1
-  if e == 2 then turn(e, d) end -- turn encoder 2
-  if e == 3 then turn(e, d) end -- turn encoder 3
-  screen_dirty = true ------------ something changed
+  print("encoder " .. e .. ", delta " .. d) -- build a message  
+
+  if e == 1 then 
+    if focus_tetra ~= nil then
+      for i = 1, math.abs(d) do
+        if d > 0 then
+          focus_tetra.engine_note = get_next_note_in_scale(focus_tetra.engine_note)
+        else
+          focus_tetra.engine_note = get_previous_note_in_scale(focus_tetra.engine_note)
+        end
+      end
+      screen_dirty = true
+    end
+  end
+
 end
--------------------------------------------------------------------------------
-function turn(e, d) ----------------------------- an encoder has turned
-  message = "encoder " .. e .. ", delta " .. d -- build a message
-end
+
 -------------------------------------------------------------------------------
 --- keys 
 -------------------------------------------------------------------------------
@@ -525,6 +592,114 @@ function press_down(i)
   message = "press down " .. i -- build a message
 end
 -------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+--- grid display functions
+-------------------------------------------------------------------------------
+function grid_redraw()
+  g:all(0)
+
+  --- draw the tetras
+  for i, tetra in ipairs(tetras) do
+    for j, key in ipairs(tetra.keys) do
+      if tetra.pressed then
+        tetra.level = 14
+      elseif tetra == focus_tetra then
+        tetra.level = 10
+      else 
+        tetra.level = 4
+      end
+      g:led(key.x, key.y, tetra.level)
+    end
+  end
+  
+  --- draw the free keys and pressed locations
+  for coord, grid_key in pairs(grid_keys) do
+    local x, y, pressed, lit, free = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.free
+    if lit then
+      if free then
+        g:led(x, y, 15)
+      end
+    else
+      g:led(x, y, 0)
+    end
+  end
+
+  g:refresh()
+
+end
+-------------------------------------------------------------------------------
+function tetra_animate_clock()
+  while true do
+    clock.sleep(1/15)
+    for i, tetra in ipairs(tetras) do
+      if not tetra.pressed then
+        if tetra.level_up then
+          tetra.level = tetra.level + 1
+          if tetra.level >= 12 then
+            tetra.level_up = false
+          end
+        else
+          tetra.level = tetra.level - 1
+          if tetra.level <= 2 then
+            tetra.level_up = true
+          end
+        end
+      end
+    end
+    grid_dirty = true
+  end
+end
+-------------------------------------------------------------------------------
+function grid_redraw_clock()
+  while true do
+    if grid_dirty then
+      grid_redraw()
+      grid_dirty = false
+    end
+    clock.sleep(1/30)
+  end
+end
+
+-------------------------------------------------------------------------------
+--- screen display functions
+-------------------------------------------------------------------------------
+function screen_redraw_clock() ----- a clock that draws space
+  while true do ------------- "while true do" means "do this forever"
+    clock.sleep(1/15) ------- pause for a fifteenth of a second (aka 15fps)
+    if screen_dirty then ---- only if something changed
+      screen_redraw() -------------- redraw space
+      screen_dirty = false -- and everything is clean again
+    end
+  end
+end
+-------------------------------------------------------------------------------
+function screen_redraw()
+  
+  local message = "X"
+
+  if focus_tetra ~= nil then
+    print("redraw focus " .. focus_tetra.pattern)
+    message = (focus_tetra.pattern .. " " .. music.note_num_to_name(focus_tetra.engine_note, true))
+  end
+
+  screen.clear() --------------- clear space
+  screen.aa(1) ----------------- enable anti-aliasing
+  screen.font_face(1) ---------- set the font face to "04B_03"
+  screen.font_size(8) ---------- set the size to 8
+  screen.level(15) ------------- max
+  screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
+  screen.text_center(message) -- center our message at (64, 32)
+  screen.pixel(0, 0) ----------- make a pixel at the north-western most terminus
+  screen.pixel(127, 0) --------- and at the north-eastern
+  screen.pixel(127, 63) -------- and at the south-eastern
+  screen.pixel(0, 63) ---------- and at the south-western
+  screen.fill() ---------------- fill the termini and message at once
+  screen.update() -------------- update space
+end
+-------------------------------------------------------------------------------
+
 
 -------------------------------------------------------------------------------
 --- debug functions
@@ -561,112 +736,19 @@ function print_grid()
     print(line)
   end
 end
-
-function grid_redraw()
-  g:all(0)
-
-  --- draw the tetras
-  for i, tetra in ipairs(tetras) do
-    for j, key in ipairs(tetra.keys) do
-      if tetra.pressed then
-        tetra.level = 14
-      elseif tetra == focus_tetra then
-        tetra.level = 10
-      else 
-        tetra.level = 4
-      end
-      g:led(key.x, key.y, tetra.level)
-    end
-  end
-  
-  --- draw the free keys and pressed locations
-  for coord, grid_key in pairs(grid_keys) do
-    local x, y, pressed, lit, free = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.free
-    if lit then
-      if free then
-        g:led(x, y, 15)
-      end
-    else
-      g:led(x, y, 0)
-    end
-  end
-
-  g:refresh()
-
+-------------------------------------------------------------------------------
+--- execute r() in the repl to quickly rerun this script
+-------------------------------------------------------------------------------
+function r() 
+  norns.script.load(norns.state.script) 
 end
+-------------------------------------------------------------------------------
 
-function tetra_animate_clock()
-  while true do
-    clock.sleep(1/15)
-    for i, tetra in ipairs(tetras) do
-      if not tetra.pressed then
-        if tetra.level_up then
-          tetra.level = tetra.level + 1
-          if tetra.level >= 12 then
-            tetra.level_up = false
-          end
-        else
-          tetra.level = tetra.level - 1
-          if tetra.level <= 2 then
-            tetra.level_up = true
-          end
-        end
-      end
-    end
-    grid_dirty = true
-  end
-end
 
-function grid_redraw_clock()
-  while true do
-    if grid_dirty then
-      grid_redraw()
-      grid_dirty = false
-    end
-    clock.sleep(1/30)
-  end
-end
-
-function screen_redraw_clock() ----- a clock that draws space
-  while true do ------------- "while true do" means "do this forever"
-    clock.sleep(1/15) ------- pause for a fifteenth of a second (aka 15fps)
-    if screen_dirty then ---- only if something changed
-      redraw() -------------- redraw space
-      screen_dirty = false -- and everything is clean again
-    end
-  end
-end
-
-function redraw() -------------- redraw() is automatically called by norns
-
-  
-  local message = "X"
-
-  if focus_tetra ~= nil then
-    print("redraw focus " .. focus_tetra.pattern)
-    message = focus_tetra.pattern
-  end
-
-  screen.clear() --------------- clear space
-  screen.aa(1) ----------------- enable anti-aliasing
-  screen.font_face(1) ---------- set the font face to "04B_03"
-  screen.font_size(8) ---------- set the size to 8
-  screen.level(15) ------------- max
-  screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
-  screen.text_center(message) -- center our message at (64, 32)
-  screen.pixel(0, 0) ----------- make a pixel at the north-western most terminus
-  screen.pixel(127, 0) --------- and at the north-eastern
-  screen.pixel(127, 63) -------- and at the south-eastern
-  screen.pixel(0, 63) ---------- and at the south-western
-  screen.fill() ---------------- fill the termini and message at once
-  screen.update() -------------- update space
-end
-
-function r() ----------------------------- execute r() in the repl to quickly rerun this script
-  norns.script.load(norns.state.script) -- https://github.com/monome/norns/blob/main/lua/core/state.lua
-end
-
-function cleanup() --------------- cleanup() is automatically called on script close
+-------------------------------------------------------------------------------
+--- cleanup() is automatically called by norns on script exit
+-------------------------------------------------------------------------------
+function cleanup() 
   clock.cancel(screen_redraw_clock_id)
   clock.cancel(grid_redraw_clock_id)
   clock.cancel(tetra_animate_clock_id)
