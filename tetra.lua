@@ -1,11 +1,36 @@
--- HTTPS://NOR.THE-RN.INFO
--- NORNSILERPLATE
+-- https://github.com/nvillar/tetra/
+-- TETRA
 -- >> k1: exit
--- >> k2:
--- >> k3:
--- >> e1:
--- >> e2:
--- >> e3:
+-- >> k2: next e2 parameter
+-- >> k3: next e3 parameter
+-- >> e1: pitch
+-- >> e2: timbre / shape / volume
+-- >> e3: attack / sustain / release
+
+
+--- ISSUES: 
+---- groups are destoryed and recalulated every group_parse
+--- (on tetra creation, translation, deletion) to make it easy to
+--- detect splitting and merging of groupss
+--- However, this means that the sequence of tetras inside groups
+--- are likely to get reshuffled, even though the group didn't
+--- underge any change. 
+--- Maybe re-process only groups that the source tetra was a part of,
+--- instead of all of them?
+
+--- TODO
+--- while two in a group are pressed, the group is selected
+--- and the encoders do the following:
+--- e2: clock divider
+--- e3: playback (up, down, ping-pong, random)
+---
+--- pressing two adjacent grid corners will:
+---   if no tetras are pressed: start/stop all group sequencers
+---   if any tetra are pressed: start/stop sequence that tetra is part of (if any)
+---
+--- x of a tetra on grid affects its stereo panning
+
+
 
 music = require("musicutil")
 engine.name = 'PolySub'
