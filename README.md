@@ -1,2 +1,2 @@
-# runes
-Runes script for monome norns
+# tetra
+Tetra script for monome norns
