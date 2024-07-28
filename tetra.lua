@@ -38,6 +38,8 @@ patterns = {
 --- lit: true if the key light is lit
 --- free: true if the key is not part of a tetra
 grid_keys = {}
+tetras = {}
+groups = {}
 
 voice_ids = {}
 max_voices = 16
@@ -103,6 +105,7 @@ function reset()
     end
   end
   tetras = {}
+  groups = {}
   grid_dirty = true
 end
 
@@ -152,8 +155,8 @@ function g.key(x, y, z)
   --- reset if two diagonally opposite corners are pressed
   if (grid_keys["1,1"].pressed and grid_keys[w .. "," .. h].pressed) or
       (grid_keys["1,".. h].pressed and grid_keys[w..",1"].pressed) then
-      reset()
-      return
+    reset()
+    return
   end
   --- parse grid, look for new tetras and create them
   --- returns true if any tetras are created
@@ -166,7 +169,9 @@ function g.key(x, y, z)
   local pressed_tetras = get_pressed_tetras()
 
   --- if only a single tetra is pressed, focus on it
-  if pressed and #pressed_tetras == 1 then
+  if pressed  
+      and #pressed_tetras == 1
+      and focus_tetra ~= pressed_tetras[1] then
     focus_tetra = pressed_tetras[1]
     print("focus " .. pressed_tetras[1].pattern)
   end
@@ -179,7 +184,7 @@ function g.key(x, y, z)
     end
   end
 
-  --- start plaing pressed tetras if they are not already playing
+  --- start playing pressed tetras if they are not already playing
   --- stop playing tetras that are not pressed
   for i, tetra in ipairs(tetras) do
     if not tetra.playing and tetra.pressed then
@@ -204,6 +209,156 @@ function g.key(x, y, z)
   screen_dirty = true
 
 end
+
+-------------------------------------------------------------------------------
+--- parse_groups() looks for and creates new groups
+--- where a group is a set of of tetras that are connected by one or more keys
+-------------------------------------------------------------------------------
+function parse_groups(tetra)
+
+  local in_group = get_group(tetra)
+
+  if in_group ~= nil then
+    print(tetra.pattern .. " tetra is in group")
+  else
+    print(tetra.pattern .. " tetra is not in group")
+  end
+
+  if in_group ~= nil then --- tetra is already in a group
+    --- check if new position has it touching a tetra in the
+    --- exiting group, if so don't remove it from the group
+    --- or add it to a new group
+    local touching = false
+    for i, key in ipairs(tetra.keys) do
+      local x, y = key.x, key.y
+      if touching then break end
+      for j, group_tetra in ipairs(in_group.tetras) do
+        for k, group_key in ipairs(group_tetra.keys) do
+          local x2, y2 = group_key.x, group_key.y
+          if (math.abs(x - x2) == 1 and y == y2) 
+              or (math.abs(y - y2) == 1 and x == x2) then
+            touching = true
+            break
+          end
+        end
+      end
+    end
+    if not touching then
+      print("removed tetra " .. tetra.pattern .. " from group")
+      for i, group_tetra in ipairs(in_group.tetras) do
+        if group_tetra == tetra then
+          table.remove(in_group.tetras, i)
+        end
+      end
+      if #in_group.tetras == 0 then
+        print("deleted group")
+        for i, group in ipairs(groups) do
+          if group == in_group then
+            table.remove(groups, i)
+          end
+        end
+      end
+    end
+    
+  
+  else --- tetra wasn't in a group
+          
+    local touching = false
+
+    for i, tetra2 in ipairs(tetras) do --- check if the tetra is touching another tetra
+      if tetra ~= tetra2
+          and not touching then
+       
+        for j, key in ipairs(tetra.keys) do
+                    local x, y = key.x, key.y
+          
+          if touching then break end
+
+          for l, key2 in ipairs(tetra2.keys) do
+            local x2, y2 = key2.x, key2.y
+            if (math.abs(x - x2) == 1 and y == y2) 
+                or (math.abs(y - y2) == 1 and x == x2) then     
+              touching = true       
+              print (tetra.pattern .. " is touching " .. tetra2.pattern)
+
+              local in_group_2 = get_group(tetra2)
+
+              if in_group_2 ~= nil then
+                print (tetra2.pattern .. " is in group")
+              else
+                print (tetra2.pattern .. " is not in a group")
+              end
+
+              if in_group == nil --- if neither tetra was in a group, create a new group with the 2 tetras
+                  and get_group(tetra2) == nil then 
+                print("created group with tetras " .. tetra.pattern .. " and " .. tetra2.pattern)
+                local new_group = {}
+                new_group.tetras = {tetra, tetra2}
+                table.insert(groups, new_group)
+                break
+              else --- if tetra2 was in a group, add tetra to the group
+                local existing_group = get_group(tetra2)
+                print("added tetra " .. tetra.pattern .. " to existing group ")
+                table.insert(existing_group.tetras, tetra)     
+                break
+              end           
+            end
+          end
+        end
+      end
+    end
+  end 
+  print_groups()
+end
+
+-------------------------------------------------------------------------------
+--- remove_tetra_from_group() removes a tetra from a group
+--- if the group only has one tetra left, the group is deleted
+-------------------------------------------------------------------------------
+function remove_tetra_from_group(tetra)
+  local group = get_group(tetra)
+  if group ~= nil then
+
+    local group_tetras = group.tetras 
+
+    for i, group_tetra in ipairs(group_tetras) do
+      if group_tetra == tetra then
+        print("removed tetra " .. group_tetra.pattern .." from group")
+        table.remove(group_tetras, i)
+      end      
+    end
+
+    for i, group in ipairs(groups) do
+      if group == group then
+        print("deleted group")
+        table.remove(groups, i)
+      end
+    end
+
+    for i, group_tetra in ipairs(group_tetras) do
+      parse_groups(group_tetra)
+    end
+
+    print_groups()
+
+  end
+end
+
+-------------------------------------------------------------------------------
+--- get_group() returns the group that a tetra is in
+--- if the tetra is not in a group, it returns nil
+-------------------------------------------------------------------------------
+function get_group(tetra)
+  for i, group in ipairs(groups) do
+    for j, group_tetra in ipairs(group.tetras) do
+      if group_tetra == tetra then
+        return group
+      end
+    end
+  end
+  return nil
+end
+
   
 -------------------------------------------------------------------------------
 --- parse_tetras() is called when a key is pressed
@@ -242,7 +397,6 @@ function parse_tetras()
             end
             --- create a new tetra
             create_tetra(pattern_name, tetra_keys)        
-
           end
         end
       end
@@ -298,9 +452,9 @@ function create_tetra(pattern_name, keys)
     tetra.engine_timbre = 0.8
   end
   
-  print ("created tetra" .. tetra.pattern)
+  print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
-
+  parse_groups(tetra)
 end
 
 -------------------------------------------------------------------------------
@@ -329,19 +483,19 @@ function update_tetras()
           grid_keys[key.coord].lit = false
           grid_keys[key.coord].free = false
         end
-        print("deleted tetra")
-
         --- tetra would have been focused, so reset focus
         focus_tetra = nil
 
         if tetra.voice_id ~= nil then
           engine.stop(tetra.voice_id)
           release_voice_id(tetra.voice_id)
-        end
 
-        --- delete the tetra
-        table.remove(tetras, i)
-        break
+          --- delete the tetra        
+          print("deleted tetra " .. tetra.pattern)        
+          table.remove(tetras, i)     
+          remove_tetra_from_group(tetra)
+          break
+        end
       else
         tetra.pressed = true
         i = i + 1
@@ -432,6 +586,8 @@ function translate_tetra(tetra, new_key)
     key.y = new_location.y
     key.coord = new_location.coord
   end
+  print("translated tetra" .. tetra.pattern)
+  parse_groups(tetra)
 end
 
 -------------------------------------------------------------------------------
@@ -562,20 +718,23 @@ end
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
   print("encoder " .. e .. ", delta " .. d) -- build a message  
-
-  if e == 1 then 
-    if focus_tetra ~= nil then
-      for i = 1, math.abs(d) do
-        if d > 0 then
-          focus_tetra.engine_note = get_next_note_in_scale(focus_tetra.engine_note)
-        else
-          focus_tetra.engine_note = get_previous_note_in_scale(focus_tetra.engine_note)
+  if focus_tetra ~= nil then
+    if e == 1 then 
+        for i = 1, math.abs(d) do
+          if d > 0 then
+            focus_tetra.engine_note = get_next_note_in_scale(focus_tetra.engine_note)
+          else
+            focus_tetra.engine_note = get_previous_note_in_scale(focus_tetra.engine_note)
+          end
         end
-      end
-      screen_dirty = true
-    end
-  end
 
+    end
+    --- if focus_tetra is playing, update the note to hear the result of the change
+    if focus_tetra.playing then
+      engine.solo(focus_tetra.voice_id, music.note_num_to_freq(focus_tetra.engine_note))
+    end
+    screen_dirty = true
+  end
 end
 
 -------------------------------------------------------------------------------
@@ -669,18 +828,22 @@ function screen_redraw_clock() ----- a clock that draws space
   while true do ------------- "while true do" means "do this forever"
     clock.sleep(1/15) ------- pause for a fifteenth of a second (aka 15fps)
     if screen_dirty then ---- only if something changed
-      screen_redraw() -------------- redraw space
+      redraw() -------------- redraw space
       screen_dirty = false -- and everything is clean again
     end
   end
 end
 -------------------------------------------------------------------------------
-function screen_redraw()
+--- redraw() is called by screen_redraw_clock()
+--- and also automatically by norns when the script comes back into focus
+--- after exiting the norns menu, it also prevents it from being called
+--- while in the menu
+-------------------------------------------------------------------------------
+function redraw()
   
   local message = "X"
 
   if focus_tetra ~= nil then
-    print("redraw focus " .. focus_tetra.pattern)
     message = (focus_tetra.pattern .. " " .. music.note_num_to_name(focus_tetra.engine_note, true))
   end
 
@@ -735,6 +898,19 @@ function print_grid()
     end
     print(line)
   end
+end
+-------------------------------------------------------------------------------
+--- print out groups and their tetras
+-------------------------------------------------------------------------------
+function print_groups()
+  print ('--- groups ---')
+  for i, group in ipairs(groups) do
+    print("group " .. i)
+    for j, group_tetra in ipairs(group.tetras) do
+      print("  " .. group_tetra.pattern)
+    end
+  end
+  print ('--------------')
 end
 -------------------------------------------------------------------------------
 --- execute r() in the repl to quickly rerun this script
