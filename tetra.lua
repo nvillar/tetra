@@ -8,16 +8,6 @@
 -- >> e3: attack / sustain / release
 
 
---- ISSUES: 
----- groups are destoryed and recalulated every group_parse
---- (on tetra creation, translation, deletion) to make it easy to
---- detect splitting and merging of groupss
---- However, this means that the sequence of tetras inside groups
---- are likely to get reshuffled, even though the group didn't
---- underge any change. 
---- Maybe re-process only groups that the source tetra was a part of,
---- instead of all of them?
-
 --- TODO
 --- while two in a group are pressed, the group is selected
 --- and the encoders do the following:
@@ -241,24 +231,35 @@ function stop_tetra(tetra)
   tetra.playing = false
 end
 
+
 -------------------------------------------------------------------------------
 --- parse_groups() looks for and creates new groups
 --- where a group is a set of of tetras that are connected by one or more keys
 -------------------------------------------------------------------------------
-function parse_groups()
+function parse_groups(moved_tetra)
 
-  groups = {}
+ local in_group = get_group(moved_tetra)
 
+ --- if tetra was part of a group, delete the group
+ --- so that it can be re-calculated
+ if in_group ~= nil then
+    print("deleted group")
+    for i, group in ipairs(groups) do
+      if group == in_group then
+        table.remove(groups, i)
+      end
+    end
+  end
+
+  --- look for groups
   for i, tetra in ipairs(tetras) do
     for j, key in ipairs(tetra.keys) do
-      local x, y = key.x, key.y
       for k, tetra2 in ipairs(tetras) do
         if tetra ~= tetra2 then
-          for l, key2 in ipairs(tetra2.keys) do
-            local x2, y2 = key2.x, key2.y
-            if (math.abs(x - x2) == 1 and y == y2) 
-                or (math.abs(y - y2) == 1 and x == x2) then
-              local in_group = get_group(tetra)
+          for l, key2 in ipairs(tetra2.keys) do            
+            if (math.abs(key.x - key2.x) == 1 and key.y == key2.y) 
+                or (math.abs(key.y - key2.y) == 1 and key.x == key2.x) then
+              in_group = get_group(tetra) 
               local in_group_2 = get_group(tetra2)
               if in_group == nil and in_group_2 == nil then
                 print("created group with tetras " .. tetra.pattern .. " and " .. tetra2.pattern)
@@ -293,39 +294,6 @@ function parse_groups()
   print_groups()
 end
 
-
--------------------------------------------------------------------------------
---- remove_tetra_from_group() removes a tetra from a group
---- if the group only has one tetra left, the group is deleted
--------------------------------------------------------------------------------
-function remove_tetra_from_group(tetra)
-  local group = get_group(tetra)
-  if group ~= nil then
-
-    local group_tetras = group.tetras 
-
-    for i, group_tetra in ipairs(group_tetras) do
-      if group_tetra == tetra then
-        print("removed tetra " .. group_tetra.pattern .." from group")
-        table.remove(group_tetras, i)
-      end      
-    end
-
-    for i, group in ipairs(groups) do
-      if group == group then
-        print("deleted group")
-        table.remove(groups, i)
-      end
-    end
-
-    for i, group_tetra in ipairs(group_tetras) do
-      parse_groups(group_tetra)
-    end
-
-    print_groups()
-
-  end
-end
 
 -------------------------------------------------------------------------------
 --- get_group() returns the group that a tetra is in
@@ -437,7 +405,7 @@ function create_tetra(pattern_name, keys)
   
   print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
-  parse_groups()
+  parse_groups(tetra)
 end
 
 -------------------------------------------------------------------------------
@@ -476,7 +444,7 @@ function update_tetras()
           --- delete the tetra        
           print("deleted tetra " .. tetra.pattern)        
           table.remove(tetras, i)  
-          parse_groups()
+          parse_groups(tetra)
           break
         end
       else
@@ -570,7 +538,7 @@ function translate_tetra(tetra, new_key)
     key.coord = new_location.coord
   end
   print("translated tetra  " .. tetra.pattern)
-  parse_groups()
+  parse_groups(tetra)
 end
 
 -------------------------------------------------------------------------------
@@ -780,8 +748,8 @@ end
 -------------------------------------------------------------------------------
 function sequence_clock()
   while true do
-    clock.sleep(1)
-    print("tetra animate")
+    --- sync to the clock
+    clock.sync(1)
     for i, group in ipairs(groups) do
       if group.current_tetra_index == nil then
         group.current_tetra_index = 1
