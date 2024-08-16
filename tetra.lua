@@ -48,25 +48,25 @@ patterns = {
 }
 
 defaults = {
-  ["r0"]   = {engine_timbre = 0.8, engine_shape = 0.5, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- Square
-  ["i0"]   = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- Line
-  ["i90"]  = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["z0"]   = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- Z
-  ["z90"]  = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["s0"]   = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- S
-  ["s90"]  = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},     
-  ["t0"]   = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- T
-  ["t90"]  = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["t180"] = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},  
-  ["t270"] = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["l0"]   = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- L
-  ["l90"]  = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["l180"] = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["l270"] = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["j0"]   = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- J
-  ["j90"]  = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["j180"] = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
-  ["j270"] = {engine_timbre = 0, engine_shape = 0, engine_level = 0.2, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["r0"]   = {engine_timbre = 0.8, engine_shape = 0.5, engine_cut = 0.9, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- Square
+  ["i0"]   = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- Line
+  ["i90"]  = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["z0"]   = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- Z
+  ["z90"]  = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["s0"]   = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- S
+  ["s90"]  = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},     
+  ["t0"]   = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- T
+  ["t90"]  = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["t180"] = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},  
+  ["t270"] = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["l0"]   = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- L
+  ["l90"]  = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["l180"] = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["l270"] = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["j0"]   = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},    -- J
+  ["j90"]  = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["j180"] = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
+  ["j270"] = {engine_timbre = 0, engine_shape = 0, engine_cut = 0.8, engine_attack = 0.05, engine_decay = 0.1, engine_release = 1},
 }
 
 --- list of grid keys, indexed by a coordinate in the format "x,y"
@@ -242,16 +242,17 @@ function play_tetra(tetra)
     tetra.voice_id = get_free_voice_id()
   end
 
-  print("playing shape " .. tetra.engine_shape)
-  print("playing timbre " .. tetra.engine_timbre)
-  print("playing level " .. tetra.engine_level)
-  print("playing attack " .. tetra.engine_attack)
-  print("playing decay " .. tetra.engine_decay)
-  print("playing release " .. tetra.engine_release)
+  print("playing voice id " .. tetra.voice_id)
 
-  engine.cut(32)
+  -- print("playing shape " .. tetra.engine_shape)
+  -- print("playing timbre " .. tetra.engine_timbre)
+  -- print("playing level " .. tetra.engine_cut)
+  -- print("playing attack " .. tetra.engine_attack)
+  -- print("playing decay " .. tetra.engine_decay)
+  -- print("playing release " .. tetra.engine_release)
 
-  engine.level(tetra.engine_level)
+  engine.cut(32 * tetra.engine_cut)
+
   engine.ampAtk(tetra.engine_attack)
   engine.ampDec(tetra.engine_decay)
   engine.ampRel(tetra.engine_release)
@@ -260,11 +261,12 @@ function play_tetra(tetra)
   engine.cutRel(tetra.engine_release)
   engine.shape(tetra.engine_shape)
   engine.timbre(tetra.engine_timbre)
-  engine.start(tetra.voice_id, music.note_num_to_freq(tetra.engine_note))
+  engine.solo(tetra.voice_id, music.note_num_to_freq(tetra.engine_note))
   tetra.playing = true
 end
 
 function stop_tetra(tetra)
+  print("stopping voice id " .. tetra.voice_id)
   engine.stop(tetra.voice_id)
   tetra.playing = false
 end
@@ -417,7 +419,7 @@ function create_tetra(pattern_name, keys)
 
   tetra.engine_shape = default_params.engine_shape
   tetra.engine_timbre = default_params.engine_timbre
-  tetra.engine_level = default_params.engine_level
+  tetra.engine_cut = default_params.engine_cut
   tetra.engine_attack = default_params.engine_attack
   tetra.engine_decay = default_params.engine_decay
   tetra.engine_release = default_params.engine_release
@@ -681,8 +683,8 @@ function get_random_note_in_scale()
 end
 -------------------------------------------------------------------------------
 
-e2_modes = {"level", "timbre", "shape"}
-e3_modes = {"attack", "decay", "release"}
+e2_modes = {"cut", "timbre", "shape"}
+e3_modes = {"attack", "release"}
 
 e2_mode = 1
 e3_mode = 1
@@ -694,6 +696,8 @@ e3_mode = 1
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
   --- print("encoder " .. e .. ", delta " .. d) -- build a message  
+
+
   if focus_tetra ~= nil then
     if e == 1 then 
         for i = 1, math.abs(d) do
@@ -714,19 +718,23 @@ function enc(e, d) --------------- enc() is automatically called by norns
       elseif  e2_modes[e2_mode] == "shape" then
         focus_tetra.engine_shape = util.clamp(focus_tetra.engine_shape + increment, 0, 1)
         defaults[focus_tetra.pattern].engine_shape = focus_tetra.engine_shape
-      elseif  e2_modes[e2_mode] == "level" then
-        focus_tetra.engine_level = util.clamp(focus_tetra.engine_level + increment, 0, 1)
-        defaults[focus_tetra.pattern].engine_level = focus_tetra.engine_level
+      elseif  e2_modes[e2_mode] == "cut" then
+        focus_tetra.engine_cut = util.clamp(focus_tetra.engine_cut + increment, 0, 1)
+        defaults[focus_tetra.pattern].engine_cut = focus_tetra.engine_cut
       end
     elseif e == 3 then
+      local increment = 0.05
+      if d < 0 then
+        increment = -0.05
+      end
       if e3_modes[e3_mode] == "attack" then
-        focus_tetra.engine_attack = util.clamp(focus_tetra.engine_attack + d/100, 0, 1)
+        focus_tetra.engine_attack = util.clamp(focus_tetra.engine_attack + increment, 0, 1)
         defaults[focus_tetra.pattern].engine_attack = focus_tetra.engine_attack
       elseif e3_modes[e3_mode] == "decay" then
-        focus_tetra.engine_decay = util.clamp(focus_tetra.engine_decay + d/100, 0, 1)
+        focus_tetra.engine_decay = util.clamp(focus_tetra.engine_decay + increment, 0, 1)
         defaults[focus_tetra.pattern].engine_decay = focus_tetra.engine_decay
       elseif e3_modes[e3_mode] == "release" then
-        focus_tetra.engine_release = util.clamp(focus_tetra.engine_release + d/100, 0, 1)
+        focus_tetra.engine_release = util.clamp(focus_tetra.engine_release + increment, 0, 2)
         defaults[focus_tetra.pattern].engine_release = focus_tetra.engine_release
       end
     end
@@ -874,8 +882,8 @@ function redraw()
       value2 = focus_tetra.engine_timbre
     elseif e2_modes[e2_mode] == "shape" then
       value2 = focus_tetra.engine_shape
-    elseif e2_modes[e2_mode] == "level" then
-      value2 = focus_tetra.engine_level
+    elseif e2_modes[e2_mode] == "cut" then
+      value2 = focus_tetra.engine_cut
     end
 
     if e3_modes[e3_mode] == "attack" then
