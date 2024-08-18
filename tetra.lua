@@ -57,6 +57,8 @@ focus_tetra = nil
 
 g = grid.connect()
 
+sequencer_playing = true
+
 screen.aa(1)
 
 -------------------------------------------------------------------------------
@@ -94,9 +96,9 @@ function init()
 
   Pond.add_params()
   
-  -- dials[1] = UI.Dial.new(15, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','C2')
-  -- dials[2] = UI.Dial.new(55, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
-  -- dials[3] = UI.Dial.new(90, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
+  dials[1] = UI.Dial.new(10, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','XX')
+  dials[2] = UI.Dial.new(60, 20, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
+  dials[3] = UI.Dial.new(95, 20, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
 
@@ -235,6 +237,7 @@ function g.key(x, y, z)
       and focus_tetra ~= pressed_tetras[1] then
     focus_tetra = pressed_tetras[1]
     --- hack - trigger the encoders to update the dials
+    enc(1, 0)
     enc(2, 0)
     enc(3, 0)
     print("focus " .. pressed_tetras[1].pattern)
@@ -431,12 +434,6 @@ function create_tetra(pattern_name, keys)
   for k, v in pairs(engine_config[pattern_name].patch) do
     tetra.engine_config.patch[k] = v
   end
-
-  if tetra.engine_config.synth == nil then
-    print("!!! no synth for pattern " .. pattern_name)
-    return
-  end
-
 
   print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
@@ -678,7 +675,10 @@ function enc(e, d) --------------- enc() is automatically called by norns
             focus_tetra.engine_note = get_previous_note_in_scale(focus_tetra.engine_note)
           end
         end
-    elseif e == 2 then      
+
+        dials[1]:set_value(math.abs(focus_tetra.engine_note - scale_notes[1]) / (scale_notes[#scale_notes] - scale_notes[1]))
+        dials[1].title = music.note_num_to_name(focus_tetra.engine_note, true)
+      elseif e == 2 then      
       local e2_inc = enc_config.e2_step * d
       local e2_min = enc_config.e2_min
       local e2_max = enc_config.e2_max
@@ -691,7 +691,7 @@ function enc(e, d) --------------- enc() is automatically called by norns
       engine_config[focus_tetra.pattern].patch[enc_config.e2_param] = e2_value
       --- normalize the value to 0-1 for the dial
 
-      --dials[2]:set_value(math.abs(e2_value - e2_min) / (e2_max - e2_min))
+      dials[2]:set_value(math.abs(e2_value - e2_min) / (e2_max - e2_min))
 
     elseif e == 3 then
       local e3_inc = enc_config.e3_step * d
@@ -705,7 +705,7 @@ function enc(e, d) --------------- enc() is automatically called by norns
       --- update the default engine configuration so that new tetras have the same configuration
       engine_config[focus_tetra.pattern].patch[enc_config.e3_param] = e3_value
       --- normalize the value to 0-1 for the dial
-      --dials[3]:set_value(math.abs(e3_value - e3_min) / (e3_max - e3_min))
+      dials[3]:set_value(math.abs(e3_value - e3_min) / (e3_max - e3_min))
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
@@ -725,7 +725,9 @@ function key(k, z) ------------------ key() is automatically called by norns
   if z == 0 then return end --------- do nothing when you release a key
 
   if k == 2 then 
+    sequencer_playing = false
   elseif k == 3 then
+    sequencer_playing = true
   end
   
   screen_dirty = true --------------- something changed
@@ -784,21 +786,23 @@ function sequence_clock()
   while true do
     --- sync to the clock
     clock.sync(1)
-    for i, group in ipairs(groups) do
-      if group.current_tetra_index == nil then
-        group.current_tetra_index = 1
-      else
-        --- advance by 1, unless at the end of the group
-        group.tetras[group.current_tetra_index].playing = false
-        group.current_tetra_index = group.current_tetra_index + 1
-        if group.current_tetra_index > #group.tetras then
+    if sequencer_playing then
+      for i, group in ipairs(groups) do
+        if group.current_tetra_index == nil then
           group.current_tetra_index = 1
+        else
+          --- advance by 1, unless at the end of the group
+          group.tetras[group.current_tetra_index].playing = false
+          group.current_tetra_index = group.current_tetra_index + 1
+          if group.current_tetra_index > #group.tetras then
+            group.current_tetra_index = 1
+          end
         end
+
+        play_tetra(group.tetras[group.current_tetra_index])
+
+        grid_dirty = true
       end
-
-      play_tetra(group.tetras[group.current_tetra_index])
-
-      grid_dirty = true
     end
   end
 end
@@ -844,13 +848,9 @@ function redraw()
   if focus_tetra ~= nil then
     
     screen.font_size(8) 
-    -- for i = 1,3 do
-    --   dials[i]:redraw()
-    -- end
-    screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
-    screen.text_center("TETRA ><>") -- center our message at (64, 32)
-    local note_name = music.note_num_to_name(focus_tetra.engine_note, true)
-    print(note_name)
+    for i = 1,3 do
+      dials[i]:redraw()
+    end
     -- screen.text_center(note_name)
   else
     screen.font_size(14) 
