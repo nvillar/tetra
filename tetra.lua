@@ -1,30 +1,19 @@
 -- https://github.com/nvillar/tetra/
 -- TETRA
 -- >> k1: exit
--- >> k2: next e2 parameter
--- >> k3: next e3 parameter
+-- >> k2: start
+-- >> k3: stop
 -- >> e1: pitch
--- >> e2: timbre / shape / volume
--- >> e3: attack / sustain / release
+-- >> e2: timbre
+-- >> e3: amplitude
 
-
---- TODO
---- while two in a group are pressed, the group is selected
---- and the encoders do the following:
---- e2: clock divider
---- e3: playback (up, down, ping-pong, random)
----
---- pressing two adjacent grid corners will:
----   if no tetras are pressed: start/stop all group sequencers
----   if any tetra are pressed: start/stop sequence that tetra is part of (if any)
----
 --- x of a tetra on grid affects its stereo panning
-
 
 music = require("musicutil")
 engine.name = 'Pond'
 Pond = include 'lib/Pond_engine'
 
+--- shape patterns for tetras
 patterns = {
   ["r0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
   ["i0"]   = {{1,1}, {1,2}, {1,3}, {1,4}},    -- Line
@@ -47,6 +36,7 @@ patterns = {
   ["j270"] = {{1,1}, {2,1}, {3,1}, {1,0}},
 }
 
+--- default engine configuration for each pattern
 engine_config = {
   -- Square
   ["r0"]   = {synth = engine.resonz, patch = {Pond_resonz_amp = 6, Pond_resonz_index = 0.1, Pond_resonz_pan = 0.0}},
@@ -76,13 +66,14 @@ engine_config = {
   ["j270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}}
 } 
 
+--- encoder configuration for each pattern group
 encoder_config = {
   -- Square
   ["r"] = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.01, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 15.0, e3_step = 0.5},
   -- Line
   ["i"] = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 10, e2_step = 0.5, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
   -- T
-  ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 24, e2_step = 1, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
+  ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 1, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
   -- Z
   ["z"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.1, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.01},
   -- S
@@ -334,7 +325,7 @@ function parse_groups(moved_tetra)
       end
     end
   end
-  print_groups()
+  -- print_groups()
 end
 
 
@@ -419,12 +410,20 @@ function create_tetra(pattern_name, keys)
   tetra.playing = false
   tetra.engine_note = get_random_note_in_scale()
 
-  --- make a shallow copy of the engine_config for that pattern,
+  --- make a deep copy of the engine_config for that pattern,
   --- so that each tetra can have its own configuration
   tetra.engine_config = {}
-  for k, v in pairs(engine_config[tetra.pattern]) do
-    tetra.engine_config[k] = v
+  for k, v in pairs(engine_config[pattern_name]) do
+    if type(v) == "table" then
+      tetra.engine_config[k] = {}
+      for k2, v2 in pairs(v) do
+        tetra.engine_config[k][k2] = v2
+      end
+    else
+      tetra.engine_config[k] = v
+    end
   end
+
 
   print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
@@ -677,21 +676,30 @@ function enc(e, d) --------------- enc() is automatically called by norns
       local e2_inc = enc_config.e2_step * d
       local e2_min = enc_config.e2_min
       local e2_max = enc_config.e2_max
-      local e2_value = util.clamp(params:get(enc_config.e2_param) + e2_inc, e2_min, e2_max)
+      local e2_value = util.clamp( focus_tetra.engine_config.patch[enc_config.e2_param] + e2_inc, e2_min, e2_max)
+      --- update the engine via params
       params:set(enc_config.e2_param, e2_value)
+      --- update this tetra's engine configuration
       focus_tetra.engine_config.patch[enc_config.e2_param] = e2_value
+      --- update the default engine configuration so that new tetras have the same configuration
+      engine_config[focus_tetra.pattern].patch[enc_config.e2_param] = e2_value
+
     elseif e == 3 then
       local e3_inc = enc_config.e3_step * d
       local e3_min = enc_config.e3_min
       local e3_max = enc_config.e3_max
-      local e3_value = util.clamp(params:get(enc_config.e3_param) + e3_inc, e3_min, e3_max)
+      local e3_value = util.clamp(focus_tetra.engine_config.patch[enc_config.e3_param] + e3_inc, e3_min, e3_max)
+      --- update the engine via params
       params:set(enc_config.e3_param, e3_value)
+      --- update this tetra's engine configuration
       focus_tetra.engine_config.patch[enc_config.e3_param] = e3_value
+      --- update the default engine configuration so that new tetras have the same configuration
+      engine_config[focus_tetra.pattern].patch[enc_config.e3_param] = e3_value
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
     if focus_tetra.playing then
-      print("playing")
+      -- print("playing")
       play_tetra(focus_tetra)
     end
 
