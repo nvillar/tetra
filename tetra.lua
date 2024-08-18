@@ -9,7 +9,9 @@
 
 --- x of a tetra on grid affects its stereo panning
 
+UI = require("ui")
 music = require("musicutil")
+
 engine.name = 'Pond'
 Pond = include 'lib/Pond_engine'
 
@@ -69,19 +71,19 @@ engine_config = {
 --- encoder configuration for each pattern group
 encoder_config = {
   -- Square
-  ["r"] = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.01, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 15.0, e3_step = 0.5},
+  ["r"] = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.03, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 15.0, e3_step = 0.5},
   -- Line
-  ["i"] = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 10, e2_step = 0.5, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
+  ["i"] = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.015},
   -- T
-  ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 1, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
+  ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
   -- Z
-  ["z"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.1, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.01},
+  ["z"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
   -- S
-  ["s"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.1, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.01},
+  ["s"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
   -- L
-  ["l"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.1, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.01},
- -- J
-  ["j"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.1, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.01},
+  ["l"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+  -- J
+  ["j"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.0131},
 }
 
 --- list of grid keys, indexed by a coordinate in the format "x,y"
@@ -95,10 +97,14 @@ groups = {}
 
 scale_notes = {}
 
+dials = {}
+
 delete_keypress = 3
 focus_tetra = nil
 
 g = grid.connect()
+
+screen.aa(1)
 
 -------------------------------------------------------------------------------
 --- init() is automatically called by norns
@@ -134,6 +140,10 @@ function init()
   build_scale()
 
   Pond.add_params()
+  
+  dials[1] = UI.Dial.new(15, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','C2')
+  dials[2] = UI.Dial.new(55, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
+  dials[3] = UI.Dial.new(90, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
 end
@@ -221,6 +231,9 @@ function g.key(x, y, z)
       and #pressed_tetras == 1
       and focus_tetra ~= pressed_tetras[1] then
     focus_tetra = pressed_tetras[1]
+    --- hack - trigger the encoders to update the dials
+    enc(2, 0)
+    enc(3, 0)
     print("focus " .. pressed_tetras[1].pattern)
   end
 
@@ -235,11 +248,11 @@ function g.key(x, y, z)
   --- start playing pressed tetras if they are not already playing
   --- stop playing tetras that are not pressed
   for i, tetra in ipairs(tetras) do
-    if not tetra.playing and tetra.pressed then
+    if tetra.pressed and not tetra.playing then
+      print("play tetra " .. tetra.pattern)
       play_tetra(tetra)
-    elseif tetra.playing and tetra.released then
-      stop_tetra(tetra)
-      tetra.released = false
+    elseif not tetra.pressed and tetra.playing then
+      tetra.playing = false
     end
   end
 
@@ -261,9 +274,6 @@ function play_tetra(tetra)
   tetra.playing = true
 end
 
-function stop_tetra(tetra)
-  tetra.playing = false
-end
 
 
 -------------------------------------------------------------------------------
@@ -404,7 +414,6 @@ function create_tetra(pattern_name, keys)
   --- can be ovewritten by each tetra.pattern
   tetra.new = true
   tetra.pressed = false
-  tetra.released = false
   tetra.pattern = pattern_name
   tetra.keys = keys
   tetra.playing = false
@@ -423,7 +432,6 @@ function create_tetra(pattern_name, keys)
       tetra.engine_config[k] = v
     end
   end
-
 
   print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
@@ -466,15 +474,10 @@ function update_tetras()
         break
         
       else
-        tetra.release = false
         tetra.pressed = true
         i = i + 1
       end
     else
-
-      if tetra.pressed then
-        tetra.released = true
-      end
       --- if none keys belonging to the tetra are pressed
       --- the tetra is not pressed
       tetra.pressed = false
@@ -660,10 +663,8 @@ end
 --- encoder 
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
-
-  local enc_config = encoder_config[string.sub(focus_tetra.pattern, 1, 1)]
-
-  if focus_tetra ~= nil then
+  if focus_tetra ~= nil then    
+    local enc_config = encoder_config[string.sub(focus_tetra.pattern, 1, 1)]
     if e == 1 then 
         for i = 1, math.abs(d) do
           if d > 0 then
@@ -683,6 +684,9 @@ function enc(e, d) --------------- enc() is automatically called by norns
       focus_tetra.engine_config.patch[enc_config.e2_param] = e2_value
       --- update the default engine configuration so that new tetras have the same configuration
       engine_config[focus_tetra.pattern].patch[enc_config.e2_param] = e2_value
+      --- normalize the value to 0-1 for the dial
+
+      dials[2]:set_value(math.abs(e2_value - e2_min) / (e2_max - e2_min))
 
     elseif e == 3 then
       local e3_inc = enc_config.e3_step * d
@@ -695,6 +699,8 @@ function enc(e, d) --------------- enc() is automatically called by norns
       focus_tetra.engine_config.patch[enc_config.e3_param] = e3_value
       --- update the default engine configuration so that new tetras have the same configuration
       engine_config[focus_tetra.pattern].patch[enc_config.e3_param] = e3_value
+      --- normalize the value to 0-1 for the dial
+      dials[3]:set_value(math.abs(e3_value - e3_min) / (e3_max - e3_min))
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
@@ -778,7 +784,7 @@ function sequence_clock()
         group.current_tetra_index = 1
       else
         --- advance by 1, unless at the end of the group
-        stop_tetra(group.tetras[group.current_tetra_index])
+        group.tetras[group.current_tetra_index].playing = false
         group.current_tetra_index = group.current_tetra_index + 1
         if group.current_tetra_index > #group.tetras then
           group.current_tetra_index = 1
@@ -825,45 +831,28 @@ function redraw()
   local message = "X"
   local message2 = "X"
 
-  if focus_tetra ~= nil then
-    message = (focus_tetra.pattern .. " " .. music.note_num_to_name(focus_tetra.engine_note, true))
-    
-    -- local value2, value3 = 0
-    -- local param2, param3 = ""
-
-    -- if enc_modes[enc_mode] == "filter" then
-    --   param2 = "cut"
-    --   value2 = focus_tetra.engine_cut
-    --   param3 = "noise"
-    --   value3 = focus_tetra.engine_noise
-    -- elseif  enc_modes[enc_mode] == "wave" then
-    --   param2 = "timbre"
-    --   value2 = focus_tetra.engine_timbre
-    --   param3 = "shape"
-    --   value3 = focus_tetra.engine_shape
-    -- elseif  enc_modes[enc_mode] == "envelope" then
-    --   param2 = "attack"
-    --   value2 = focus_tetra.engine_attack
-    --   param3 = "release"
-    --   value3 = focus_tetra.engine_release     
-    -- end
-
-    -- message2 = (param2 .. " " .. value2 .. " " .. param3 .. " " .. value3)
-  end
-
   screen.clear() --------------- clear space
   screen.aa(1) ----------------- enable anti-aliasing
-  screen.font_face(1) ---------- set the font face to "04B_03"
-  screen.font_size(8) ---------- set the size to 8
-  screen.level(15) ------------- max
-  screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
-  screen.text_center(message) -- center our message at (64, 32)
-  screen.move(64, 42)
-  screen.text_center(message2)
-  screen.pixel(0, 0) ----------- make a pixel at the north-western most terminus
-  screen.pixel(127, 0) --------- and at the north-eastern
-  screen.pixel(127, 63) -------- and at the south-eastern
-  screen.pixel(0, 63) ---------- and at the south-western
+  screen.font_face(1)
+
+  if focus_tetra ~= nil then
+    
+    screen.font_size(8) 
+    for i = 1,3 do
+      dials[i]:redraw()
+    end
+
+    local note_name = music.note_num_to_name(focus_tetra.engine_note, true)
+    screen.level(4)
+    screen.text_center(note_name)
+  else
+    screen.font_size(14) 
+    screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
+    screen.text_center("TETRA ><>") -- center our message at (64, 32)
+  end
+
+
+  
   screen.fill() ---------------- fill the termini and message at once
   screen.update() -------------- update space
 end
