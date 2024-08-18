@@ -96,9 +96,9 @@ function init()
 
   Pond.add_params()
   
-  dials[1] = UI.Dial.new(10, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','XX')
-  dials[2] = UI.Dial.new(60, 20, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
-  dials[3] = UI.Dial.new(95, 20, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
+  dials[1] = UI.Dial.new(13, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','XX')
+  dials[2] = UI.Dial.new(55, 23, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
+  dials[3] = UI.Dial.new(90, 23, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
 
@@ -255,7 +255,6 @@ function g.key(x, y, z)
   --- stop playing tetras that are not pressed
   for i, tetra in ipairs(tetras) do
     if tetra.pressed and not tetra.playing then
-      print("play tetra " .. tetra.pattern)
       play_tetra(tetra)
     elseif not tetra.pressed and tetra.playing then
       tetra.playing = false
@@ -435,7 +434,11 @@ function create_tetra(pattern_name, keys)
     tetra.engine_config.patch[k] = v
   end
 
-  print ("created tetra " .. tetra.pattern)
+  local coord = get_tetra_coords(tetra)
+  print("created tetra " .. tetra.pattern .. " at " .. coord.x .. "," .. coord.y)
+
+  
+
   table.insert(tetras, tetra)
   parse_groups(tetra)
 end
@@ -598,6 +601,33 @@ function get_pressed_tetra_key(tetra)
 end
 
 
+-------------------------------------------------------------------------------
+--- get_tetra_coords() returns the x,y coordinate of the middle of a tetra
+-------------------------------------------------------------------------------
+function get_tetra_coords(tetra)
+  local coord = {x = 0, y = 0}
+
+  for i, key in ipairs(tetra.keys) do
+    coord.x = coord.x + key.x
+    coord.y = coord.y + key.y
+  end
+  coord.x = coord.x / #tetra.keys
+  coord.y = coord.y / #tetra.keys
+
+  if coord.x < g.cols  / 2 then
+    coord.x = math.floor(coord.x)
+  else
+    coord.x = math.ceil(coord.x)
+  end
+
+  if coord.y < g.rows / 2 then
+    coord.y = math.floor(coord.y)
+  else
+    coord.y = math.ceil(coord.y)
+  end
+
+  return coord
+end
 
 
 -------------------------------------------------------------------------------
@@ -664,7 +694,6 @@ end
 --- encoder 
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
-  print("enc " .. e .. " " .. d)
   if focus_tetra ~= nil then    
     local enc_config = encoder_config[string.sub(focus_tetra.pattern, 1, 1)]
     if e == 1 then 
