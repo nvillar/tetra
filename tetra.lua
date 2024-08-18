@@ -21,9 +21,9 @@
 --- x of a tetra on grid affects its stereo panning
 
 
-
 music = require("musicutil")
-engine.name = 'PolySub'
+engine.name = 'Pond'
+Pond = include 'lib/Pond_engine'
 
 patterns = {
   ["r0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
@@ -47,26 +47,33 @@ patterns = {
   ["j270"] = {{1,1}, {2,1}, {3,1}, {1,0}},
 }
 
-defaults = {
-  ["r0"]   = {engine_timbre = 0.8, engine_shape = 0.5, engine_cut = 0.9, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- Square
-  ["i0"]   = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- Line
-  ["i90"]  = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["z0"]   = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- Z
-  ["z90"]  = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["s0"]   = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- S
-  ["s90"]  = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},     
-  ["t0"]   = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- T
-  ["t90"]  = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["t180"] = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},  
-  ["t270"] = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["l0"]   = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- L
-  ["l90"]  = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["l180"] = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["l270"] = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["j0"]   = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},    -- J
-  ["j90"]  = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["j180"] = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
-  ["j270"] = {engine_timbre = 0.0, engine_shape = 0.0, engine_cut = 0.8, engine_noise = 0.0, engine_attack = 0.05, engine_release = 1.0},
+engine_config = {
+  -- Square
+  ["r0"]   = {synth = engine.resonz, patch = {Pond_resonz_amp = 6, Pond_resonz_index = 0.1, Pond_resonz_pan = 0.0}},
+  -- Line
+  ["i0"]   = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.0, Pond_karplu_pan = 0.1}},                 
+  ["i90"]  = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.3, Pond_karplu_pan = 0.1}},
+  -- T     
+  ["t0"]   = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},   
+  ["t180"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},       
+  ["t90"]  = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
+  ["t270"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
+  -- Z
+  ["z0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["z90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  -- S
+  ["s0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 7, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["s90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 7, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  -- L
+  ["l0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 2, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["l180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 2, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["l90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 2, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["l270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 2, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  -- J
+  ["j0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 9, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["j180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 9, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["j90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 9, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+  ["j270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 9, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
 } 
 
 --- list of grid keys, indexed by a coordinate in the format "x,y"
@@ -77,9 +84,6 @@ defaults = {
 grid_keys = {}
 tetras = {}
 groups = {}
-
-voice_ids = {}
-max_voices = 16
 
 scale_notes = {}
 
@@ -123,6 +127,9 @@ function init()
     action = function() build_scale() end}
 
   build_scale()
+
+  Pond.add_params()
+
   reset()
 end
 
@@ -133,8 +140,7 @@ end
 function reset()
   local w, h = g.cols, g.rows
   print('--- reset ---')
-  engine.stopAll()
-  voice_ids = {}
+  --- engine.stopAll()
   grid_keys = {}
   focus_tetra = nil
   --- init grid_keys table
@@ -181,11 +187,8 @@ function g.key(x, y, z)
   --- turn key on if is off and pressed, but only if 
   --- no tetras are pressed, otherwise be considered a translation,
   --- a condition that is handled further down the code
-  --- also check if there are free voices available, otherwise
-  --- don't turn the key on
   elseif not grid_keys[coord].lit 
       and #get_pressed_tetras() == 0
-      and get_number_of_free_voices() > 0
       and pressed then
     grid_keys[coord].lit = true
     grid_keys[coord].free = true
@@ -242,37 +245,18 @@ end
 
 function play_tetra(tetra)
 
-  if tetra.voice_id == nil then
-    tetra.voice_id = get_free_voice_id()
+  --- apply the tetra configuration to the engine params
+  for k, v in pairs(tetra.engine_config.patch) do
+    params:set(k, v)
   end
 
-  print("playing voice id " .. tetra.voice_id)
+  local hz = music.note_num_to_freq(tetra.engine_note)
+  tetra.engine_config.synth(hz)
 
-  -- print ("playing cut " .. 32 * tetra.engine_cut)
-  -- print("playing shape " .. tetra.engine_shape)
-  -- print("playing timbre " .. tetra.engine_timbre)
-  -- print("playing level " .. tetra.engine_cut)
-  -- print("playing attack " .. tetra.engine_attack)
-  -- print("playing decay " .. tetra.engine_decay)
-  -- print("playing release " .. tetra.engine_release)
-
-  engine.cut(32 * tetra.engine_cut)
-  engine.noise(tetra.engine_noise)
-  engine.ampAtk(tetra.engine_attack)
-  engine.ampDec(tetra.engine_decay)
-  engine.ampRel(tetra.engine_release)
-  engine.cutAtk(tetra.engine_attack)
-  engine.cutDec(tetra.engine_decay)
-  engine.cutRel(tetra.engine_release)
-  engine.shape(tetra.engine_shape)
-  engine.timbre(tetra.engine_timbre)
-  engine.start(tetra.voice_id, music.note_num_to_freq(tetra.engine_note))
   tetra.playing = true
 end
 
 function stop_tetra(tetra)
-  print("stopping voice id " .. tetra.voice_id)
-  engine.stop(tetra.voice_id)
   tetra.playing = false
 end
 
@@ -421,16 +405,12 @@ function create_tetra(pattern_name, keys)
   tetra.playing = false
   tetra.engine_note = get_random_note_in_scale()
 
-
-  local default_params = defaults[tetra.pattern]
-
-  tetra.engine_shape = default_params.engine_shape
-  tetra.engine_timbre = default_params.engine_timbre
-  tetra.engine_cut = default_params.engine_cut
-  tetra.engine_noise = default_params.engine_noise
-  tetra.engine_attack = default_params.engine_attack
-  tetra.engine_decay = default_params.engine_decay
-  tetra.engine_release = default_params.engine_release
+  --- make a shallow copy of the engine_config for that pattern,
+  --- so that each tetra can have its own configuration
+  tetra.engine_config = {}
+  for k, v in pairs(engine_config[tetra.pattern]) do
+    tetra.engine_config[k] = v
+  end
 
   print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
@@ -466,16 +446,12 @@ function update_tetras()
         --- tetra would have been focused, so reset focus
         focus_tetra = nil
 
-        if tetra.voice_id ~= nil then
-          engine.stop(tetra.voice_id)
-          release_voice_id(tetra.voice_id)
-
-          --- delete the tetra        
-          print("deleted tetra " .. tetra.pattern)        
-          table.remove(tetras, i)  
-          parse_groups(tetra)
-          break
-        end
+        --- delete the tetra        
+        print("deleted tetra " .. tetra.pattern)        
+        table.remove(tetras, i)  
+        parse_groups(tetra)
+        break
+        
       else
         tetra.release = false
         tetra.pressed = true
@@ -603,41 +579,8 @@ function get_pressed_tetra_key(tetra)
   return nil
 end
 
--------------------------------------------------------------------------------
---- voice management and music functions
--------------------------------------------------------------------------------
---- assign and return the next free voice id
---- there are a maximum of 16 voices
---- if all voices are taken, return nil
---- otherwise, return the next free voice id
--------------------------------------------------------------------------------
-function get_free_voice_id()
-  for i = 1, max_voices do
-    if voice_ids[i] == nil then
-      voice_ids[i] = true
-      return i
-    end
-  end
-  return nil
-end
--------------------------------------------------------------------------------
---- release a voice id
--------------------------------------------------------------------------------
-function release_voice_id(id)
-  voice_ids[id] = nil
-end
--------------------------------------------------------------------------------
---- get the number of free voices
--------------------------------------------------------------------------------
-function get_number_of_free_voices()
-  local count = 0
-  for i = 1, max_voices do
-    if voice_ids[i] == nil then
-      count = count + 1
-    end
-  end
-  return count
-end
+
+
 
 -------------------------------------------------------------------------------
 --- build the scale
@@ -717,28 +660,28 @@ function enc(e, d) --------------- enc() is automatically called by norns
             focus_tetra.engine_note = get_previous_note_in_scale(focus_tetra.engine_note)
           end
         end
-    elseif e == 2 then
-      if enc_modes[enc_mode] == "filter" then
-        focus_tetra.engine_cut = util.clamp(focus_tetra.engine_cut + increment, 0, 1)
-        defaults[focus_tetra.pattern].engine_cut = focus_tetra.engine_cut
-      elseif  enc_modes[enc_mode] == "wave" then
-        focus_tetra.engine_timbre = util.clamp(focus_tetra.engine_timbre + increment, 0, 1)
-        defaults[focus_tetra.pattern].engine_timbre = focus_tetra.engine_timbre
-      elseif  enc_modes[enc_mode] == "envelope" then
-        focus_tetra.engine_attack = util.clamp(focus_tetra.engine_attack + increment, 0, 1)
-        defaults[focus_tetra.pattern].engine_attack = focus_tetra.engine_attack        
-      end
-    elseif e == 3 then
-      if enc_modes[enc_mode] == "filter" then
-        focus_tetra.engine_noise = util.clamp(focus_tetra.engine_noise + increment, 0, 1)
-        defaults[focus_tetra.pattern].engine_noise = focus_tetra.engine_noise
-      elseif  enc_modes[enc_mode] == "wave" then
-        focus_tetra.engine_shape = util.clamp(focus_tetra.engine_shape + increment, 0, 1)
-        defaults[focus_tetra.pattern].engine_shape = focus_tetra.engine_shape       
-      elseif  enc_modes[enc_mode] == "envelope" then
-        focus_tetra.engine_release = util.clamp(focus_tetra.engine_release + increment, 0, 2)
-        defaults[focus_tetra.pattern].engine_release = focus_tetra.engine_release        
-      end
+    -- elseif e == 2 then
+    --   if enc_modes[enc_mode] == "filter" then
+    --     focus_tetra.engine_cut = util.clamp(focus_tetra.engine_cut + increment, 0, 1)
+    --     engine_config[focus_tetra.pattern].engine_cut = focus_tetra.engine_cut
+    --   elseif  enc_modes[enc_mode] == "wave" then
+    --     focus_tetra.engine_timbre = util.clamp(focus_tetra.engine_timbre + increment, 0, 1)
+    --     engine_config[focus_tetra.pattern].engine_timbre = focus_tetra.engine_timbre
+    --   elseif  enc_modes[enc_mode] == "envelope" then
+    --     focus_tetra.engine_attack = util.clamp(focus_tetra.engine_attack + increment, 0, 1)
+    --     engine_config[focus_tetra.pattern].engine_attack = focus_tetra.engine_attack        
+    --   end
+    -- elseif e == 3 then
+    --   if enc_modes[enc_mode] == "filter" then
+    --     focus_tetra.engine_noise = util.clamp(focus_tetra.engine_noise + increment, 0, 1)
+    --     engine_config[focus_tetra.pattern].engine_noise = focus_tetra.engine_noise
+    --   elseif  enc_modes[enc_mode] == "wave" then
+    --     focus_tetra.engine_shape = util.clamp(focus_tetra.engine_shape + increment, 0, 1)
+    --     engine_config[focus_tetra.pattern].engine_shape = focus_tetra.engine_shape       
+    --   elseif  enc_modes[enc_mode] == "envelope" then
+    --     focus_tetra.engine_release = util.clamp(focus_tetra.engine_release + increment, 0, 2)
+    --     engine_config[focus_tetra.pattern].engine_release = focus_tetra.engine_release        
+    --   end
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
@@ -879,27 +822,28 @@ function redraw()
 
   if focus_tetra ~= nil then
     message = (focus_tetra.pattern .. " " .. music.note_num_to_name(focus_tetra.engine_note, true))
-    local value2, value3 = 0
-    local param2, param3 = ""
+    
+    -- local value2, value3 = 0
+    -- local param2, param3 = ""
 
-    if enc_modes[enc_mode] == "filter" then
-      param2 = "cut"
-      value2 = focus_tetra.engine_cut
-      param3 = "noise"
-      value3 = focus_tetra.engine_noise
-    elseif  enc_modes[enc_mode] == "wave" then
-      param2 = "timbre"
-      value2 = focus_tetra.engine_timbre
-      param3 = "shape"
-      value3 = focus_tetra.engine_shape
-    elseif  enc_modes[enc_mode] == "envelope" then
-      param2 = "attack"
-      value2 = focus_tetra.engine_attack
-      param3 = "release"
-      value3 = focus_tetra.engine_release     
-    end
+    -- if enc_modes[enc_mode] == "filter" then
+    --   param2 = "cut"
+    --   value2 = focus_tetra.engine_cut
+    --   param3 = "noise"
+    --   value3 = focus_tetra.engine_noise
+    -- elseif  enc_modes[enc_mode] == "wave" then
+    --   param2 = "timbre"
+    --   value2 = focus_tetra.engine_timbre
+    --   param3 = "shape"
+    --   value3 = focus_tetra.engine_shape
+    -- elseif  enc_modes[enc_mode] == "envelope" then
+    --   param2 = "attack"
+    --   value2 = focus_tetra.engine_attack
+    --   param3 = "release"
+    --   value3 = focus_tetra.engine_release     
+    -- end
 
-    message2 = (param2 .. " " .. value2 .. " " .. param3 .. " " .. value3)
+    -- message2 = (param2 .. " " .. value2 .. " " .. param3 .. " " .. value3)
   end
 
   screen.clear() --------------- clear space
