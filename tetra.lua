@@ -8,12 +8,13 @@
 -- >> e3: amplitude
 
 --- x of a tetra on grid affects its stereo panning
-
-UI = require("ui")
-music = require("musicutil")
+-- X
 
 engine.name = 'Pond'
 Pond = include 'lib/Pond_engine'
+
+UI = require("ui")
+music = require("musicutil")
 
 --- shape patterns for tetras
 patterns = {
@@ -36,54 +37,6 @@ patterns = {
   ["j90"]  = {{1,1}, {2,1}, {3,1}, {3,2}},
   ["j180"] = {{1,1}, {2,1}, {1,2}, {1,3}},
   ["j270"] = {{1,1}, {2,1}, {3,1}, {1,0}},
-}
-
---- default engine configuration for each pattern
-engine_config = {
-  -- Square
-  ["r0"]   = {synth = engine.resonz, patch = {Pond_resonz_amp = 6, Pond_resonz_index = 0.1, Pond_resonz_pan = 0.0}},
-  -- Line
-  ["i0"]   = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.0, Pond_karplu_pan = 0.1}},                 
-  ["i90"]  = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.3, Pond_karplu_pan = 0.1}},
-  -- T     
-  ["t0"]   = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},   
-  ["t180"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},       
-  ["t90"]  = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
-  ["t270"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
-  -- Z
-  ["z0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["z90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  -- S
-  ["s0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["s90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  -- L
-  ["l0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["l180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["l90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["l270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  -- J
-  ["j0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 2, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["j180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 2, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["j90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-  ["j270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}}
-} 
-
---- encoder configuration for each pattern group
-encoder_config = {
-  -- Square
-  ["r"] = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.03, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 15.0, e3_step = 0.5},
-  -- Line
-  ["i"] = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.015},
-  -- T
-  ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
-  -- Z
-  ["z"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
-  -- S
-  ["s"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
-  -- L
-  ["l"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
-  -- J
-  ["j"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.0131},
 }
 
 --- list of grid keys, indexed by a coordinate in the format "x,y"
@@ -141,12 +94,15 @@ function init()
 
   Pond.add_params()
   
-  dials[1] = UI.Dial.new(15, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','C2')
-  dials[2] = UI.Dial.new(55, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
-  dials[3] = UI.Dial.new(90, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
+  -- dials[1] = UI.Dial.new(15, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','C2')
+  -- dials[2] = UI.Dial.new(55, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
+  -- dials[3] = UI.Dial.new(90, 15, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
+
+  
 end
+
 
 -------------------------------------------------------------------------------
 --- reset the state of the grid
@@ -155,7 +111,54 @@ end
 function reset()
   local w, h = g.cols, g.rows
   print('--- reset ---')
-  --- engine.stopAll()
+
+    --- default engine configuration for each pattern
+  engine_config = {
+    -- Square
+    ["r0"]   = {synth = engine.resonz, patch = {Pond_resonz_amp = 6, Pond_resonz_index = 0.1, Pond_resonz_pan = 0.0}},
+    -- Line
+    ["i0"]   = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.0, Pond_karplu_pan = 0.1}},                 
+    ["i90"]  = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.3, Pond_karplu_pan = 0.1}},
+    -- T     
+    ["t0"]   = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},   
+    ["t180"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},       
+    ["t90"]  = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
+    ["t270"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
+    -- Z
+    ["z0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["z90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    -- S
+    ["s0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["s90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    -- L
+    ["l0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["l180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["l90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["l270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    -- J
+    ["j0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 2, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["j180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 2, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["j90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["j270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}}
+  } 
+  --- encoder configuration for each pattern group
+  encoder_config = {
+    -- Square
+    ["r"] = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.03, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 15.0, e3_step = 0.5},
+    -- Line
+    ["i"] = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.015},
+    -- T
+    ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
+    -- Z
+    ["z"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+    -- S
+    ["s"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+    -- L
+    ["l"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+    -- J
+    ["j"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.0131},
+}
+
   grid_keys = {}
   focus_tetra = nil
   --- init grid_keys table
@@ -422,16 +425,18 @@ function create_tetra(pattern_name, keys)
   --- make a deep copy of the engine_config for that pattern,
   --- so that each tetra can have its own configuration
   tetra.engine_config = {}
-  for k, v in pairs(engine_config[pattern_name]) do
-    if type(v) == "table" then
-      tetra.engine_config[k] = {}
-      for k2, v2 in pairs(v) do
-        tetra.engine_config[k][k2] = v2
-      end
-    else
-      tetra.engine_config[k] = v
-    end
+  tetra.engine_config.synth = engine_config[pattern_name].synth
+  tetra.engine_config.patch = {}
+
+  for k, v in pairs(engine_config[pattern_name].patch) do
+    tetra.engine_config.patch[k] = v
   end
+
+  if tetra.engine_config.synth == nil then
+    print("!!! no synth for pattern " .. pattern_name)
+    return
+  end
+
 
   print ("created tetra " .. tetra.pattern)
   table.insert(tetras, tetra)
@@ -656,13 +661,13 @@ end
 -------------------------------------------------------------------------------
 
 
-
 -------------------------------------------------------------------------------
 --- norns controls event handlers
 -------------------------------------------------------------------------------
 --- encoder 
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
+  print("enc " .. e .. " " .. d)
   if focus_tetra ~= nil then    
     local enc_config = encoder_config[string.sub(focus_tetra.pattern, 1, 1)]
     if e == 1 then 
@@ -686,7 +691,7 @@ function enc(e, d) --------------- enc() is automatically called by norns
       engine_config[focus_tetra.pattern].patch[enc_config.e2_param] = e2_value
       --- normalize the value to 0-1 for the dial
 
-      dials[2]:set_value(math.abs(e2_value - e2_min) / (e2_max - e2_min))
+      --dials[2]:set_value(math.abs(e2_value - e2_min) / (e2_max - e2_min))
 
     elseif e == 3 then
       local e3_inc = enc_config.e3_step * d
@@ -700,7 +705,7 @@ function enc(e, d) --------------- enc() is automatically called by norns
       --- update the default engine configuration so that new tetras have the same configuration
       engine_config[focus_tetra.pattern].patch[enc_config.e3_param] = e3_value
       --- normalize the value to 0-1 for the dial
-      dials[3]:set_value(math.abs(e3_value - e3_min) / (e3_max - e3_min))
+      --dials[3]:set_value(math.abs(e3_value - e3_min) / (e3_max - e3_min))
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
@@ -834,24 +839,24 @@ function redraw()
   screen.clear() --------------- clear space
   screen.aa(1) ----------------- enable anti-aliasing
   screen.font_face(1)
+  screen.level(15)
 
   if focus_tetra ~= nil then
     
     screen.font_size(8) 
-    for i = 1,3 do
-      dials[i]:redraw()
-    end
-
+    -- for i = 1,3 do
+    --   dials[i]:redraw()
+    -- end
+    screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
+    screen.text_center("TETRA ><>") -- center our message at (64, 32)
     local note_name = music.note_num_to_name(focus_tetra.engine_note, true)
-    screen.level(4)
-    screen.text_center(note_name)
+    print(note_name)
+    -- screen.text_center(note_name)
   else
     screen.font_size(14) 
     screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
     screen.text_center("TETRA ><>") -- center our message at (64, 32)
   end
-
-
   
   screen.fill() ---------------- fill the termini and message at once
   screen.update() -------------- update space
@@ -920,7 +925,6 @@ end
 --- cleanup() is automatically called by norns on script exit
 -------------------------------------------------------------------------------
 function cleanup() 
-  engine.stopAll()
   clock.cancel(screen_redraw_clock_id)
   clock.cancel(grid_redraw_clock_id)
   clock.cancel(sequence_clock_id)
