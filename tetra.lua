@@ -273,6 +273,26 @@ function play_tetra(tetra)
     params:set(k, v)
   end
 
+  --- set the stereo panning based on the x position of the tetra
+  local x = get_tetra_coords(tetra).x
+  local pan = (x - 1) / (g.cols - 1) * 2 - 1
+
+  if tetra.engine_config.patch.Pond_sinfm_pan ~= nil then
+    params:set("Pond_sinfm_pan", pan)
+  end
+
+  if tetra.engine_config.patch.Pond_ringer_pan ~= nil then
+    params:set("Pond_ringer_pan", pan)
+  end
+
+  if tetra.engine_config.patch.Pond_resonz_pan ~= nil then
+    params:set("Pond_resonz_pan", pan)
+  end
+
+  if tetra.engine_config.patch.Pond_karplu_pan ~= nil then
+    params:set("Pond_karplu_pan", pan)
+  end
+
   local hz = music.note_num_to_freq(tetra.engine_note)
   tetra.engine_config.synth(hz)
 
@@ -434,10 +454,7 @@ function create_tetra(pattern_name, keys)
     tetra.engine_config.patch[k] = v
   end
 
-  local coord = get_tetra_coords(tetra)
-  print("created tetra " .. tetra.pattern .. " at " .. coord.x .. "," .. coord.y)
-
-  
+  print("created tetra " .. tetra.pattern)
 
   table.insert(tetras, tetra)
   parse_groups(tetra)
@@ -817,18 +834,23 @@ function sequence_clock()
     clock.sync(1)
     if sequencer_playing then
       for i, group in ipairs(groups) do
-        if group.current_tetra_index == nil then
-          group.current_tetra_index = 1
+        if group.tetra_sequence_index == nil then
+          group.tetra_sequence_index = 1
         else
           --- advance by 1, unless at the end of the group
-          group.tetras[group.current_tetra_index].playing = false
-          group.current_tetra_index = group.current_tetra_index + 1
-          if group.current_tetra_index > #group.tetras then
-            group.current_tetra_index = 1
+
+          local tetra = group.tetras[group.tetra_sequence_index]
+
+          if tetra.playing and not tetra.pressed then
+            tetra.playing = false
+          end
+          group.tetra_sequence_index = group.tetra_sequence_index + 1
+          if group.tetra_sequence_index > #group.tetras then
+            group.tetra_sequence_index = 1
           end
         end
 
-        play_tetra(group.tetras[group.current_tetra_index])
+        play_tetra(group.tetras[group.tetra_sequence_index])
 
         grid_dirty = true
       end
@@ -866,25 +888,30 @@ end
 -------------------------------------------------------------------------------
 function redraw()
   
-  local message = "X"
-  local message2 = "X"
-
   screen.clear() --------------- clear space
   screen.aa(1) ----------------- enable anti-aliasing
   screen.font_face(1)
-  screen.level(15)
+ 
 
   if focus_tetra ~= nil then
-    
+    screen.level(15)
     screen.font_size(8) 
     for i = 1,3 do
       dials[i]:redraw()
     end
     -- screen.text_center(note_name)
   else
-    screen.font_size(14) 
-    screen.move(64, 32) ---------- move the pointer to x = 64, y = 32
-    screen.text_center("TETRA ><>") -- center our message at (64, 32)
+    screen.level(5)
+    screen.font_size(19) 
+    screen.move(42, 32) 
+    screen.text_center("TETRA")
+    screen.line_width(2.5)
+    screen.move(80, 21)
+    screen.line_rel(15, 10)
+    screen.line_rel(8, -5)
+    screen.line_rel(-8, -5)
+    screen.line_rel(-15, 10)
+    screen.stroke()
   end
   
   screen.fill() ---------------- fill the termini and message at once
