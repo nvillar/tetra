@@ -40,16 +40,16 @@ If deleting or moving a tetra splits a group, new groups are created from the re
 The rate at which the sequence is played can be adjusted from the parameters clock menu.  
 The the left key on the norns will stop the sequence, and the right key will start it.  
 
-## Installation
-
-Install via maiden or manually by copying the folder to the norns code directory.  
-Restart after installing to enable the synth engine.
-
-# Requirements
+## Requirements
 
 - monome norns or norns shield
 - monome grid or compatible device (any size should work,
 but have only been tested with 128 grid)
+
+## Installation
+
+Install via maiden or manually by copying the folder to the norns code directory.  
+Restart after installing to enable the synth engine.
 
 ## Thank you
 
