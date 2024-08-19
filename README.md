@@ -13,7 +13,7 @@ Some shapes have two or four possible orientations.
 
 When a tetra is completed, it starts to act as a single entity.  
 Pressing any one of its keys will activate it and trigger a sound.  
-The sound is determined by the shape of the tetra, and, in some cases,by its orientation.  
+The sound is determined by the shape of the tetra, and, in some cases, by its orientation.  
 The note played by the tetra is chosen randomly from a scale, which can be changed from the parameters menu.  
 
 There are three possible adjustments to the sound of a tetra: note, timbre, and volume, which can be changed by  
