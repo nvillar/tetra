@@ -1,14 +1,11 @@
--- https://github.com/nvillar/tetra/
--- TETRA
--- >> k1: exit
--- >> k2: start
--- >> k3: stop
--- >> e1: pitch
--- >> e2: timbre
--- >> e3: amplitude
-
---- x of a tetra on grid affects its stereo panning
--- X
+---TETRA ><>
+---https://github.com/nvillar/tetra/
+--->> k1: exit
+--->> k2: start
+--->> k3: stop
+--->> e1: pitch
+--->> e2: timbre
+--->> e3: amplitude
 
 engine.name = 'Pond'
 Pond = include 'lib/Pond_engine'
@@ -47,6 +44,8 @@ patterns = {
 grid_keys = {}
 tetras = {}
 groups = {}
+engine_config = {}
+encoder_config = {}
 
 scale_notes = {}
 
