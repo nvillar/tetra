@@ -31,8 +31,8 @@ To delete all tetras, press and hold any two diagonally opposite corner-keys on 
 
 ## Groups
 
-A groups is created when two or more tetras are adjacent to each other by at least one key.  
-Tetras in a group is played sequentially, in the order they were added to the group.  
+A group is created when two or more tetras are adjacent to each other by at least one key.  
+Tetras in a group are played sequentially, in the order they were added to the group.  
 The last tetra to be added will play after all the other tetras in the group.  
 If a tetra adjoins two or more exisiting sequences, the sequences are merged into one.  
 If deleting or moving a tetra splits a group, new groups are created from the remaining tetras.  
