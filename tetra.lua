@@ -231,6 +231,7 @@ function g.key(x, y, z)
     reset()
     return
   end
+  
   --- parse grid, look for new tetras and create them
   --- returns true if any tetras are created
   parse_tetras()
@@ -787,39 +788,55 @@ function enc(e, d) --------------- enc() is automatically called by norns
   end
 end
 
+k2_hold = false
+k3_hold = false
 -------------------------------------------------------------------------------
 --- keys 
 -------------------------------------------------------------------------------
 function key(k, z) ------------------ key() is automatically called by norns
-  if z == 0 then return end --------- do nothing when you release a key
 
-  pressed_tetras = get_pressed_tetras()
+  if z == 1 then
 
-  if #pressed_tetras > 0 then
-    for i, tetra in ipairs(pressed_tetras) do
-      if k == 3 then
-        tetra.ratchet = tetra.ratchet + 1        
-        if tetra.ratchet > 4 then
-          tetra.ratchet = 4
-        end
-      elseif k == 2 then
-        tetra.ratchet = tetra.ratchet - 1
-        if tetra.ratchet < 1 then
-          tetra.ratchet = 1
-        end
-      end
-    end  
-  else
-    if k == 2 then 
-      sequencer_playing = false
+    if k == 2 then
+      k2_hold = true
+    elseif k == 3 then
+      k3_hold = true
+    end
+
+    if k2_hold and k3_hold then
+      sequencer_playing = not sequencer_playing
       focus_tetra = nil
       grid_dirty = true
-    elseif k == 3 then
-      sequencer_playing = true
+      screen_dirty = true      
     end
-  end
+
+  else 
+
+    if k == 2 then
+      k2_hold = false
+    elseif k == 3 then
+      k3_hold = false
+    end
+
+    if focus_tetra ~= nil then
+      if k == 2 then
+        focus_tetra.ratchet = focus_tetra.ratchet - 1
+        if focus_tetra.ratchet < 1 then
+          focus_tetra.ratchet = 1
+        end
+      elseif k == 3 then
+        focus_tetra.ratchet = focus_tetra.ratchet + 1
+        if focus_tetra.ratchet > 4 then
+          focus_tetra.ratchet = 4
+        end
+      end
+    end
   
-  screen_dirty = true --------------- something changed
+    screen_dirty = true --------------- something changed
+
+  end --------- do nothing when you release a key
+
+
 end
 
 -------------------------------------------------------------------------------
@@ -963,7 +980,6 @@ function redraw()
     if focus_tetra.ratchet > 1 then
       screen.move(83, 14)
       screen.text_center("X"..focus_tetra.ratchet)
-      screen.stroke()
     end
   else
     screen.level(15)
@@ -976,6 +992,9 @@ function redraw()
     screen.line_rel(8, -5)
     screen.line_rel(-8, -5)
     screen.line_rel(-15, 10)
+    if not sequencer_playing then
+      screen.stroke()
+    end
   end
   
   screen.fill() ---------------- fill the termini and message at once
