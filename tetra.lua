@@ -95,9 +95,9 @@ function init()
 
   Pond.add_params()
   
-  dials[1] = UI.Dial.new(13, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','XX')
-  dials[2] = UI.Dial.new(55, 23, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
-  dials[3] = UI.Dial.new(90, 23, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
+  dials[1] = UI.Dial.new(10, 4, 22, 0, 0.0, 1.0, 0, 0, {},'','XX')
+  dials[2] = UI.Dial.new(59, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','timbre')
+  dials[3] = UI.Dial.new(94, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
 
@@ -788,14 +788,17 @@ function enc(e, d) --------------- enc() is automatically called by norns
   end
 end
 
-k2_hold = false
-k3_hold = false
+
 -------------------------------------------------------------------------------
 --- keys 
 -------------------------------------------------------------------------------
+
+k2_hold = false
+k3_hold = false
+
 function key(k, z) ------------------ key() is automatically called by norns
 
-  if z == 1 then
+  if z == 1 then --- key pressed
 
     if k == 2 then
       k2_hold = true
@@ -807,8 +810,9 @@ function key(k, z) ------------------ key() is automatically called by norns
       sequencer_playing = not sequencer_playing
       focus_tetra = nil
       grid_dirty = true
-      screen_dirty = true      
     end
+    
+    screen_dirty = true      
 
   else 
 
@@ -970,17 +974,45 @@ function redraw()
   screen.font_face(1)
   screen.update()
 
-  if focus_tetra ~= nil then    
+  if focus_tetra ~= nil then        
+
+    print ("k2_hold: " .. tostring(k2_hold) .. ", k3_hold: " .. tostring(k3_hold))
     screen.move(16, 27) 
     screen.level(15)
     screen.font_size(8) 
+    screen.line_width(1)
     for i = 1,3 do
       dials[i]:redraw()
     end
-    if focus_tetra.ratchet > 1 then
-      screen.move(83, 14)
-      screen.text_center("X"..focus_tetra.ratchet)
+
+    screen.line_width(0.2)
+    screen.move(40, 54)
+    screen.line(46, 54)
+    screen.stroke()
+    
+    screen.circle(43, 54, 5.5)
+    if k2_hold then 
+      screen.fill()
+    else
+      screen.stroke()
     end
+
+    screen.move(78, 54)
+    screen.line(72, 54)
+    screen.stroke()
+    screen.move(75, 51)
+    screen.line(75, 57)
+    screen.stroke()
+    screen.move(81, 54)
+    screen.circle(75, 54, 5.5)
+    if k3_hold then 
+      screen.fill()
+    else
+      screen.stroke()
+    end
+    screen.move(59, 57)
+    screen.text_center("X"..focus_tetra.ratchet)
+
   else
     screen.level(15)
     screen.font_size(19) 
