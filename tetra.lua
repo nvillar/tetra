@@ -1,8 +1,8 @@
 ---TETRA ><>
 ---https://github.com/nvillar/tetra/
 --->> k1: exit
---->> k2: start
---->> k3: stop
+--->> k2: start / ratchet tetra up
+--->> k3: stop  / ratchet tetra down
 --->> e1: pitch
 --->> e2: timbre
 --->> e3: amplitude
@@ -15,7 +15,7 @@ music = require("musicutil")
 
 --- shape patterns for tetras
 patterns = {
-  ["r0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
+  ["o0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
   ["i0"]   = {{1,1}, {1,2}, {1,3}, {1,4}},    -- Line
   ["i90"]  = {{1,1}, {2,1}, {3,1}, {4,1}},
   ["z0"]   = {{1,1}, {2,1}, {2,2}, {3,2}},    -- Z
@@ -37,10 +37,10 @@ patterns = {
 }
 
 --- list of grid keys, indexed by a coordinate in the format "x,y"
---- each key has a state: pressed, lit, free
+--- each key has a state: pressed, lit, unclaimed
 --- pressed: true if the key is currently pressed'
 --- lit: true if the key light is lit
---- free: true if the key is not part of a tetra
+--- unclaimed: true if the key is not part of a tetra
 grid_keys = {}
 tetras = {}
 groups = {}
@@ -101,7 +101,6 @@ function init()
 
   reset()
 
-  
 end
 
 
@@ -115,49 +114,61 @@ function reset()
 
     --- default engine configuration for each pattern
   engine_config = {
-    -- Square
-    ["r0"]   = {synth = engine.resonz, patch = {Pond_resonz_amp = 6, Pond_resonz_index = 0.1, Pond_resonz_pan = 0.0}},
-    -- Line
-    ["i0"]   = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.0, Pond_karplu_pan = 0.1}},                 
-    ["i90"]  = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.2, Pond_karplu_index = 2, Pond_karplu_coef = 0.3, Pond_karplu_pan = 0.1}},
-    -- T     
-    ["t0"]   = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},   
-    ["t180"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 3, Pond_ringer_pan = 0.0}},       
-    ["t90"]  = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
-    ["t270"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.2, Pond_ringer_index = 1, Pond_ringer_pan = 0.0}},   
-    -- Z
-    ["z0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["z90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    -- S
-    ["s0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["s90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    -- L
-    ["l0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["l180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 1, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["l90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["l270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 3, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    -- Square 
+    ["o0"]   = {synth = engine.resonz, patch = {Pond_resonz_amp = 10, Pond_resonz_index = 0.1 , Pond_resonz_pan = 0.0}},
+    -- Line 
+    ["i0"]   = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.5, Pond_karplu_index = 2,  Pond_karplu_coef = 0.1, Pond_karplu_pan = 0.1}},                 
+    ["i90"]  = {synth = engine.karplu, patch = {Pond_karplu_amp = 0.5, Pond_karplu_index = 2,  Pond_karplu_coef = 0.3, Pond_karplu_pan = 0.1}},
+    -- T      
+    ["t0"]   = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.6, Pond_ringer_index = 2,  Pond_ringer_pan = 0.0}},   
+    ["t180"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.6, Pond_ringer_index = 3,  Pond_ringer_pan = 0.0}},       
+    ["t90"]  = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.6, Pond_ringer_index = 0,  Pond_ringer_pan = 0.0}},   
+    ["t270"] = {synth = engine.ringer, patch = {Pond_ringer_amp = 0.6, Pond_ringer_index = 1,  Pond_ringer_pan = 0.0}},   
+    -- Z 
+    ["z0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.0,  Pond_sinfm_modnum = 1.0, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["z90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.0,  Pond_sinfm_modnum = 1.0, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    -- S 
+    ["s0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.0,  Pond_sinfm_modnum = 3.0, Pond_sinfm_modeno = 2, Pond_sinfm_attack = 0.1, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["s90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.0,  Pond_sinfm_modnum = 3.0, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 0.2, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    -- L 
+    ["l0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.5,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 3, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["l180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.0,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 2, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["l90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.5,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 4, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["l270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 0.0,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 3, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
     -- J
-    ["j0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 2, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["j180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 2, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["j90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
-    ["j270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.2, Pond_sinfm_index = 1, Pond_sinfm_modnum = 4, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}}
+    ["j0"]   = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.5,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 5, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["j180"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.0,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 1, Pond_sinfm_attack = 0.0, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["j90"]  = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 1.5,  Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 3, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}},
+    ["j270"] = {synth = engine.sinfm, patch = {Pond_sinfm_amp = 0.5, Pond_sinfm_index = 0.0, Pond_sinfm_modnum = 2.0, Pond_sinfm_modeno = 3, Pond_sinfm_attack = 0.3, Pond_sinfm_release = 1.0, Pond_sinfm_phase = 0.0, Pond_sinfm_pan = 0.0}}
   } 
   --- encoder configuration for each pattern group
   encoder_config = {
     -- Square
-    ["r"] = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.03, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 15.0, e3_step = 0.5},
+    ["o0"]    = {e2_param = "Pond_resonz_index", e2_min = 0.02, e2_max = 1.0, e2_step = 0.02, e3_param = "Pond_resonz_amp", e3_min = 0, e3_max = 25.0, e3_step = 0.5},
     -- Line
-    ["i"] = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.015},
+    ["i0"]   = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 3, e2_step = 0.06, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["i90"]  = {e2_param = "Pond_karplu_index", e2_min = 0.1, e2_max = 3, e2_step = 0.06, e3_param = "Pond_karplu_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
     -- T
-    ["t"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.3, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 0.5, e3_step = 0.01},
+    ["t0"]   =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.2, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["t180"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.2, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["t90"]  =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.2, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["t270"] =  {e2_param = "Pond_ringer_index", e2_min = 1, e2_max = 10, e2_step = 0.2, e3_param = "Pond_ringer_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
     -- Z
-    ["z"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+    ["z0"]  = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.04, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["z90"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.04, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
     -- S
-    ["s"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+    ["s0"]  = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.04, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["s90"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.04, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
     -- L
-    ["l"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.013},
+    ["l0"]   = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["l180"] = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["l90"]  = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["l270"] = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
     -- J
-    ["j"] = {e2_param = "Pond_sinfm_index", e2_min = 0, e2_max = 2, e2_step = 0.07, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 0.4, e3_step = 0.0131},
+    ["j0"]   = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["j180"] = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["j90"]  = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02},
+    ["j270"] = {e2_param = "Pond_sinfm_modnum", e2_min = 0, e2_max = 3, e2_step = 0.06, e3_param = "Pond_sinfm_amp", e3_min = 0, e3_max = 1.0, e3_step = 0.02}
 }
 
   grid_keys = {}
@@ -166,7 +177,7 @@ function reset()
   for x = 1, w do
     for y = 1, h do
       local coord = x .. "," .. y
-      grid_keys[coord] = {x = x, y = y, pressed = false, lit = false, free = false}
+      grid_keys[coord] = {x = x, y = y, pressed = false, lit = false, unclaimed = false}
     end
   end
   tetras = {}
@@ -195,13 +206,13 @@ function g.key(x, y, z)
   end 
   grid_keys[coord].pressed = pressed
   
-  --- process keys that are pressed and determine if they are lit or free
-  --- turn key off if: it is free, pressed and lit
+  --- process keys that are pressed and determine if they are lit or unclaimed
+  --- turn key off if: it is unclaimed, pressed and lit
   if grid_keys[coord].lit 
-        and grid_keys[coord].free 
+        and grid_keys[coord].unclaimed 
         and pressed then
     grid_keys[coord].lit = false
-    grid_keys[coord].free = true
+    grid_keys[coord].unclaimed = false --- unclaimable
 
   --- turn key on if is off and pressed, but only if 
   --- no tetras are pressed, otherwise be considered a translation,
@@ -210,7 +221,7 @@ function g.key(x, y, z)
       and #get_pressed_tetras() == 0
       and pressed then
     grid_keys[coord].lit = true
-    grid_keys[coord].free = true
+    grid_keys[coord].unclaimed = true
   end
 
   --- check for special reset conditions
@@ -275,6 +286,9 @@ function play_tetra(tetra)
   --- set the stereo panning based on the x position of the tetra
   local x = get_tetra_coords(tetra).x
   local pan = (x - 1) / (g.cols - 1) * 2 - 1
+
+  --- clamp the pan value to a less extreme range
+  pan = math.min(0.8, math.max(-0.8, pan))
 
   if tetra.engine_config.patch.Pond_sinfm_pan ~= nil then
     params:set("Pond_sinfm_pan", pan)
@@ -378,28 +392,28 @@ function get_group(tetra)
   return nil
 end
 
-  
+
 -------------------------------------------------------------------------------
 --- parse_tetras() is called when a key is pressed
 --- it checks if a new tetra has been formed in the grid
---- by grid keys that lit and free (not already part of a tetra)
+--- by grid keys that lit and unclaimed (not already part of a tetra)
 --- if a tetra is found, it is added to the list of tetras 
---- and the keys are marked as free = false (claimed by the tetra)
+--- and the keys are marked as unclaimed = false (claimed by the tetra)
 -------------------------------------------------------------------------------
 function parse_tetras()
   --- check if a tetra is present in the grid
   for pattern_name, pattern in pairs(patterns) do
     for coord, grid_key in pairs(grid_keys) do
-      local x, y, free = grid_key.x, grid_key.y, grid_key.free
-      --- a tetra can only be formed from free keys
-      if free then
-        --- check if the pattern matches a set of lit, free keys
+      local x, y, unclaimed = grid_key.x, grid_key.y, grid_key.unclaimed
+      --- a tetra can only be formed from unclaimed keys
+      if unclaimed then
+        --- check if the pattern matches a set of lit, unclaimed keys
         for i, pattern_key in ipairs(pattern) do
           local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
           local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
           local tetra_key_coord = tetra_key_x .. "," .. tetra_key_y
-          --- if the key is not present in the grid or is not lit and free, break
-          if grid_keys[tetra_key_coord] == nil or not grid_keys[tetra_key_coord].free or not grid_keys[tetra_key_coord].lit then
+          --- if the key is not present in the grid or is not lit and unclaimed, break
+          if grid_keys[tetra_key_coord] == nil or not grid_keys[tetra_key_coord].unclaimed or not grid_keys[tetra_key_coord].lit then
             break
           end
           --- if the last key in the pattern is found, create the tetra
@@ -412,7 +426,7 @@ function parse_tetras()
               local tetra_key_coord = tetra_key_x .. "," .. tetra_key_y
               table.insert(tetra_keys, {coord = tetra_key_coord, x = tetra_key_x, y = tetra_key_y})
               --- mark the key as claimed
-              grid_keys[tetra_key_coord].free = false
+              grid_keys[tetra_key_coord].unclaimed = false
             end
             --- create a new tetra
             create_tetra(pattern_name, tetra_keys)        
@@ -423,12 +437,13 @@ function parse_tetras()
   end
 end
 
+
 -------------------------------------------------------------------------------
 --- this defines the default values of the new tetra, and then creates it
---- a tetra is considered new when it is first created, and until it is released
---- this allows the tetra to be created by pressing multiple buttons simulataneously
---- otherwise, the tetra would be deleted immediately after it is created unless
---- every key is pressed one after the other to form the tetra
+--- a tetra is considered 'new' when it is first created, and up until it is 
+--- first released. this 'new' state allows the tetra to be created by pressing 
+--- multiple buttons simulataneously - a gesture normally reserved for deleting
+--- so the tetra would be deleted immediately after it is created in this way
 -------------------------------------------------------------------------------
 function create_tetra(pattern_name, keys)
 
@@ -442,6 +457,7 @@ function create_tetra(pattern_name, keys)
   tetra.keys = keys
   tetra.playing = false
   tetra.engine_note = get_random_note_in_scale()
+  tetra.ratchet = 1
 
   --- make a deep copy of the engine_config for that pattern,
   --- so that each tetra can have its own configuration
@@ -458,6 +474,7 @@ function create_tetra(pattern_name, keys)
   table.insert(tetras, tetra)
   parse_groups(tetra)
 end
+
 
 -------------------------------------------------------------------------------
 --- update_tetras() is called when a key is pressed
@@ -483,7 +500,7 @@ function update_tetras()
         --- if a tetra was already pressed and another key of the same tetra is pressed, delete it
         for k, key in ipairs(tetra.keys) do
           grid_keys[key.coord].lit = false
-          grid_keys[key.coord].free = false
+          grid_keys[key.coord].unclaimed = false
         end
         --- tetra would have been focused, so reset focus
         focus_tetra = nil
@@ -514,7 +531,7 @@ end
 -------------------------------------------------------------------------------
 --- is_valid_location() checks if a tetra can be translated to a new location
 --- by checking if the new location is within the boundaries of the grid
---- and if the new location is not occupied by another tetra or a lit+free key
+--- and if the new location is not occupied by another tetra or a lit+unclaimed key
 -------------------------------------------------------------------------------
 function is_valid_location(tetra, new_key)
 
@@ -538,18 +555,22 @@ function is_valid_location(tetra, new_key)
     --- allow the key to be placed on top of another key in the same tetra
     for j, tetra_key in ipairs(tetra.keys) do
       if tetra_key.x == new_x and tetra_key.y == new_y then
+        print("self overlap")
         self_overlap = true
       end
     end
 
-    --- check if the new location is not occupied by an lit/free key or another tetra,
-    if (grid_keys[new_coord].lit or grid_keys[new_coord].free) and not self_overlap then
+    --- check if the new location is not occupied by an lit/unclaimed key or another tetra,
+    if (grid_keys[new_coord].lit or grid_keys[new_coord].unclaimed) and not self_overlap then
+      print ("occupied")
+      print ("for tetra key at " .. key.x .. "," .. key.y .. " new coord: " .. new_coord .. " is lit: " .. tostring(grid_keys[new_coord].lit) .. ", unclaimed: " .. tostring(grid_keys[new_coord].unclaimed))
       return false
     end
   
   end
   return true
 end
+
 
 -------------------------------------------------------------------------------
 --- translate_tetra() translates a tetra to a new location
@@ -572,14 +593,14 @@ function translate_tetra(tetra, new_key)
   -- update the keys at the old locations
   for i, key in ipairs(tetra.keys) do
     grid_keys[key.coord].lit = false
-    grid_keys[key.coord].free = false
+    grid_keys[key.coord].unclaimed = false
   end
 
   -- update the keys at the new locations
   for i, key in ipairs(tetra.keys) do
     local new_location = new_locations[i]
     grid_keys[new_location.coord].lit = true
-    grid_keys[new_location.coord].free = false
+    grid_keys[new_location.coord].unclaimed = false
     key.x = new_location.x
     key.y = new_location.y
     key.coord = new_location.coord
@@ -587,6 +608,7 @@ function translate_tetra(tetra, new_key)
   print("translated tetra  " .. tetra.pattern)
   parse_groups(tetra)
 end
+
 
 -------------------------------------------------------------------------------
 --- get_pressed_tetras() returns a list of tetras that are currently pressed
@@ -600,6 +622,7 @@ function get_pressed_tetras()
   end
   return pressed_tetras
 end
+
 
 -------------------------------------------------------------------------------
 --- get_pressed_tetra_key() returns the key that is pressed in a tetra
@@ -711,7 +734,8 @@ end
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
   if focus_tetra ~= nil then    
-    local enc_config = encoder_config[string.sub(focus_tetra.pattern, 1, 1)]
+    local enc_config = encoder_config[focus_tetra.pattern]
+    
     if e == 1 then 
         for i = 1, math.abs(d) do
           if d > 0 then
@@ -769,10 +793,30 @@ end
 function key(k, z) ------------------ key() is automatically called by norns
   if z == 0 then return end --------- do nothing when you release a key
 
-  if k == 2 then 
-    sequencer_playing = false
-  elseif k == 3 then
-    sequencer_playing = true
+  pressed_tetras = get_pressed_tetras()
+
+  if #pressed_tetras > 0 then
+    for i, tetra in ipairs(pressed_tetras) do
+      if k == 3 then
+        tetra.ratchet = tetra.ratchet + 1        
+        if tetra.ratchet > 4 then
+          tetra.ratchet = 4
+        end
+      elseif k == 2 then
+        tetra.ratchet = tetra.ratchet - 1
+        if tetra.ratchet < 1 then
+          tetra.ratchet = 1
+        end
+      end
+    end  
+  else
+    if k == 2 then 
+      sequencer_playing = false
+      focus_tetra = nil
+      grid_dirty = true
+    elseif k == 3 then
+      sequencer_playing = true
+    end
   end
   
   screen_dirty = true --------------- something changed
@@ -811,11 +855,11 @@ function grid_redraw()
     end
   end
   
-  --- draw the free keys and pressed locations
+  --- draw the unclaimed keys and pressed locations
   for coord, grid_key in pairs(grid_keys) do
-    local x, y, pressed, lit, free = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.free
+    local x, y, pressed, lit, unclaimed = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.unclaimed
     if lit then
-      if free then
+      if unclaimed then
         g:led(x, y, 15)
       end
     else
@@ -828,31 +872,48 @@ function grid_redraw()
 end
 -------------------------------------------------------------------------------
 function sequence_clock()
+  quarter_beat = 1
+
   while true do
     --- sync to the clock
-    clock.sync(1)
+    clock.sync(1/4)    
     if sequencer_playing then
+      
       for i, group in ipairs(groups) do
+
         if group.tetra_sequence_index == nil then
           group.tetra_sequence_index = 1
-        else
+        elseif quarter_beat == 1 then         
           --- advance by 1, unless at the end of the group
-
-          local tetra = group.tetras[group.tetra_sequence_index]
-
-          if tetra.playing and not tetra.pressed then
-            tetra.playing = false
-          end
           group.tetra_sequence_index = group.tetra_sequence_index + 1
           if group.tetra_sequence_index > #group.tetras then
             group.tetra_sequence_index = 1
-          end
+          end      
         end
 
-        play_tetra(group.tetras[group.tetra_sequence_index])
+        local tetra = group.tetras[group.tetra_sequence_index]
+      
+        if not tetra.pressed then
+          tetra.playing = false
+        end
+
+        if quarter_beat <= tetra.ratchet then
+          play_tetra(tetra)
+        end
+
+        if quarter_beat == 4 and not tetra.pressed then
+          tetra.playing = false
+        end
 
         grid_dirty = true
       end
+
+      quarter_beat = quarter_beat + 1
+      if quarter_beat > 4 then
+        quarter_beat = 1
+      end
+
+
     end
   end
 end
@@ -890,15 +951,20 @@ function redraw()
   screen.clear() --------------- clear space
   screen.aa(1) ----------------- enable anti-aliasing
   screen.font_face(1)
- 
+  screen.update()
 
-  if focus_tetra ~= nil then
+  if focus_tetra ~= nil then    
+    screen.move(16, 27) 
     screen.level(15)
     screen.font_size(8) 
     for i = 1,3 do
       dials[i]:redraw()
     end
-    -- screen.text_center(note_name)
+    if focus_tetra.ratchet > 1 then
+      screen.move(83, 14)
+      screen.text_center("X"..focus_tetra.ratchet)
+      screen.stroke()
+    end
   else
     screen.level(15)
     screen.font_size(19) 
@@ -910,7 +976,6 @@ function redraw()
     screen.line_rel(8, -5)
     screen.line_rel(-8, -5)
     screen.line_rel(-15, 10)
-    screen.stroke()
   end
   
   screen.fill() ---------------- fill the termini and message at once
@@ -925,7 +990,7 @@ end
 --- print the state of the grid, with a visual representation of the key state
 --- 'a' for lit false, 'A' for lit true, 
 --- 'p' for pressed false, 'P' for pressed true
---- 'f' for free false, 'F' for free true
+--- 'f' for unclaimed false, 'F' for unclaimed true
 -------------------------------------------------------------------------------
 function print_grid()
   local w, h = g.cols, g.rows
@@ -944,7 +1009,7 @@ function print_grid()
       else
         line = line .. "p"
       end
-      if key.free then
+      if key.unclaimed then
         line = line .. "F"
       else
         line = line .. "f"
