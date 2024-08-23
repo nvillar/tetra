@@ -12,7 +12,9 @@ music = require("musicutil")
 
 nb = include("lib/nb/lib/nb")
 
---- shape patterns for tetras
+shapes = {'O', 'I', 'Z', 'S', 'T', 'L', 'J'}
+
+--- patterns for tetras
 patterns = {
   ["O0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
   ["I0"]   = {{1,1}, {1,2}, {1,3}, {1,4}},    -- Line
@@ -47,10 +49,8 @@ engine_config = {}
 encoder_config = {}
 
 scale_notes = {}
-max_length = 4
-max_volume = 2
-
-
+max_length = 1.99
+max_volume = 2.00
 
 dials = {}
 
@@ -80,10 +80,12 @@ function init()
 
   local scale_names = {}
   for i = 1, #music.SCALES do
-  table.insert(scale_names, music.SCALES[i].name)
+    table.insert(scale_names, music.SCALES[i].name)
   end
+
+  params:add_separator("scale_params", "scale")
   -- setting root notes using params
-    params:add{type = "number", id = "root_note", name = "root note",
+  params:add{type = "number", id = "root_note", name = "root note",
     min = 0, max = 127, default = 36, formatter = function(param) return music.note_num_to_name(param:get(), true) end,
     action = function() build_scale() end} 
 
@@ -99,14 +101,12 @@ function init()
 
   build_scale()
 
-  nb:add_param("voice_id_O", "O")  
-  nb:add_param("voice_id_I", "I")
-  nb:add_param("voice_id_Z", "Z")
-  nb:add_param("voice_id_S", "S")
-  nb:add_param("voice_id_T", "T")
-  nb:add_param("voice_id_L", "L")
-  nb:add_param("voice_id_J", "J")
+  params:add_separator("shape_params", "shapes")
+  for i, shape in ipairs(shapes) do
+    nb:add_param(shape, shape) 
+  end
   
+  params:add_separator("voice_params", "voices")
   nb:add_player_params()
   
   dials[1] = UI.Dial.new(10, 4, 22, 0, 0.0, 1.0, 0, 0, {},'','note')
@@ -127,13 +127,9 @@ function reset()
   local w, h = g.cols, g.rows
   print('--- reset ---')
 
-
-  voice_ids = {"voice_id_O", "voice_id_I", "voice_id_Z", "voice_id_S", "voice_id_T", "voice_id_L", "voice_id_J"}
-
-  for i, voice_id in ipairs(voice_ids) do
+  for i, voice_id in ipairs(shapes) do
     local player = params:lookup_param(voice_id):get_player()
     if player ~= nil then
-      print("stopping " .. voice_id)
       player:stop_all()
     end
   end
@@ -246,9 +242,8 @@ end
 function play_tetra(tetra)
   --- get first character of tetra.pattern to determine the voice_id
   
-  local shape_id = string.sub(tetra.pattern, 1, 1)
-  local voice_id = "voice_id_" .. shape_id
-  local player = params:lookup_param(voice_id):get_player()
+  local id = string.sub(tetra.pattern, 1, 1)
+  local player = params:lookup_param(id):get_player()
 
 
   if player ~= nil then
@@ -259,7 +254,6 @@ function play_tetra(tetra)
 
   -- --- clamp the pan value to a less extreme range
   -- pan = math.min(0.8, math.max(-0.8, pan))
-
     player:play_note(tetra.note, tetra.volume, tetra.length)
   else
     print("player is nil")
@@ -906,8 +900,7 @@ function redraw()
   screen.update()
 
   if focus_tetra ~= nil then        
-
-    print ("k2_hold: " .. tostring(k2_hold) .. ", k3_hold: " .. tostring(k3_hold))
+  
     screen.move(16, 27) 
     screen.level(15)
     screen.font_size(8) 
@@ -1027,6 +1020,7 @@ end
 --- cleanup() is automatically called by norns on script exit
 -------------------------------------------------------------------------------
 function cleanup() 
+  reset()
   clock.cancel(screen_redraw_clock_id)
   clock.cancel(grid_redraw_clock_id)
   clock.cancel(sequence_clock_id)
