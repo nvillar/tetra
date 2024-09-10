@@ -109,9 +109,9 @@ function init()
   params:add_separator("voice_params", "voices")
   nb:add_player_params()
   
-  dials[1] = UI.Dial.new(10, 4, 22, 0, 0.0, 1.0, 0, 0, {},'','note')
-  dials[2] = UI.Dial.new(59, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','length')
-  dials[3] = UI.Dial.new(94, 10, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
+  dials[1] = UI.Dial.new(10, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','note')
+  dials[2] = UI.Dial.new(59, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','length')
+  dials[3] = UI.Dial.new(94, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
 
@@ -410,6 +410,7 @@ function create_tetra(pattern_name, keys)
   tetra.length = 1
   tetra.volume = 1
   tetra.ratchet = 1
+  tetra.interval = 1
 
   print("created tetra " .. tetra.pattern)
 
@@ -704,7 +705,8 @@ function enc(e, d) --------------- enc() is automatically called by norns
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
-    if focus_tetra.playing then
+    --- but exclude the length changes
+    if focus_tetra.playing and e ~= 2 then
       -- print("playing")
       play_tetra(focus_tetra)
     end
@@ -749,14 +751,14 @@ function key(k, z) ------------------ key() is automatically called by norns
 
     if focus_tetra ~= nil then
       if k == 2 then
-        focus_tetra.ratchet = focus_tetra.ratchet - 1
-        if focus_tetra.ratchet < 1 then
-          focus_tetra.ratchet = 1
+        focus_tetra.interval = focus_tetra.interval + 1
+        if focus_tetra.interval > 4 then
+          focus_tetra.interval = 1
         end
       elseif k == 3 then
         focus_tetra.ratchet = focus_tetra.ratchet + 1
         if focus_tetra.ratchet > 4 then
-          focus_tetra.ratchet = 4
+          focus_tetra.ratchet = 1
         end
       end
     end
@@ -829,22 +831,33 @@ function sequence_clock()
 
         if group.tetra_sequence_index == nil then
           group.tetra_sequence_index = 1
+          group.sequence_iteration = 1                  
         elseif quarter_beat == 1 then         
-          --- advance by 1, unless at the end of the group
+          --- advance by 1, loop back if at the end of the sequence
           group.tetra_sequence_index = group.tetra_sequence_index + 1
           if group.tetra_sequence_index > #group.tetras then
             group.tetra_sequence_index = 1
-          end      
+
+            --- advance the sequence iteration
+            group.sequence_iteration = group.sequence_iteration + 1
+            if group.sequence_iteration > 4 then
+              group.sequence_iteration = 1
+            end    
+          end 
+       
         end
 
+
         local tetra = group.tetras[group.tetra_sequence_index]
-      
+              
         if not tetra.pressed then
           tetra.playing = false
         end
 
-        if quarter_beat <= tetra.ratchet then
-          play_tetra(tetra)
+        if group.sequence_iteration % tetra.interval == 0 then          
+          if quarter_beat <= tetra.ratchet then
+            play_tetra(tetra)
+          end
         end
 
         if quarter_beat == 4 and not tetra.pressed then
@@ -856,9 +869,8 @@ function sequence_clock()
 
       quarter_beat = quarter_beat + 1
       if quarter_beat > 4 then
-        quarter_beat = 1
+        quarter_beat = 1       
       end
-
 
     end
   end
@@ -901,42 +913,30 @@ function redraw()
 
   if focus_tetra ~= nil then        
   
-    screen.move(16, 27) 
+    screen.stroke()
     screen.level(15)
     screen.font_size(8) 
     screen.line_width(1)
+
     for i = 1,3 do
       dials[i]:redraw()
     end
-
-    screen.line_width(0.2)
-    screen.move(40, 54)
-    screen.line(46, 54)
-    screen.stroke()
     
-    screen.circle(43, 54, 5.5)
-    if k2_hold then 
-      screen.fill()
-    else
-      screen.stroke()
-    end
-
-    screen.move(78, 54)
-    screen.line(72, 54)
+    --- draw the interval and ratchet
+    screen.circle(48, 54, 8)
+    screen.move(48, 56)
+    screen.text_center(focus_tetra.interval)
+    screen.move(20, 56)
+    screen.text_center("interval")
     screen.stroke()
-    screen.move(75, 51)
-    screen.line(75, 57)
+    screen.circle(76, 54, 8)
     screen.stroke()
-    screen.move(81, 54)
-    screen.circle(75, 54, 5.5)
-    if k3_hold then 
-      screen.fill()
-    else
-      screen.stroke()
-    end
-    screen.move(59, 57)
-    screen.text_center("X"..focus_tetra.ratchet)
+    screen.move(76, 56)
+    screen.text_center(focus_tetra.ratchet)
+    screen.move(103, 56)
+    screen.text_center("ratchet")
 
+    screen.stroke()
   else
     screen.level(15)
     screen.font_size(19) 
