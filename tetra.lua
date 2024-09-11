@@ -1,10 +1,10 @@
 ---TETRA ><>
 ---github.com/nvillar/tetra/
 ---k1: exit
----k2: ratchet- |   k2 + k3:
----k3: ratchet+ | start/stop  
+---k2: interval |  k2 + k3:  |
+---k3: ratchet  | start/stop |
 ---e1: pitch
----e2: length
+---e2: sustain
 ---e3: volume
 
 UI = require("ui")
@@ -49,7 +49,7 @@ engine_config = {}
 encoder_config = {}
 
 scale_notes = {}
-max_length = 1.99
+max_sustain = 1.99
 max_volume = 2.00
 
 dials = {}
@@ -110,7 +110,7 @@ function init()
   nb:add_player_params()
   
   dials[1] = UI.Dial.new(10, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','note')
-  dials[2] = UI.Dial.new(59, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','length')
+  dials[2] = UI.Dial.new(59, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','sustain')
   dials[3] = UI.Dial.new(94, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
@@ -223,6 +223,9 @@ function g.key(x, y, z)
     if is_valid_location(tetra, grid_keys[coord]) then
       translate_tetra(tetra, grid_keys[coord])
     end
+  --- if no tetras are pressed, reset the focus
+  elseif pressed and #pressed_tetras == 0 then
+    focus_tetra = nil
   end
 
   --- start playing pressed tetras if they are not already playing
@@ -239,27 +242,24 @@ function g.key(x, y, z)
   screen_dirty = true
 end
 
+-------------------------------------------------------------------------------
+--- play_tetra() plays a tetra with the n.b. engine associated 
+--- with the tetra, if any
+-------------------------------------------------------------------------------
 function play_tetra(tetra)
   --- get first character of tetra.pattern to determine the voice_id
-  
   local id = string.sub(tetra.pattern, 1, 1)
   local player = params:lookup_param(id):get_player()
 
-
   if player ~= nil then
-  --- TODO, set the pan
-    --- set the stereo panning based on the x position of the tetra
-  -- local x = get_tetra_coords(tetra).x
-  -- local pan = (x - 1) / (g.cols - 1) * 2 - 1
-
-  -- --- clamp the pan value to a less extreme range
-  -- pan = math.min(0.8, math.max(-0.8, pan))
-    player:play_note(tetra.note, tetra.volume, tetra.length)
-  else
-    print("player is nil")
+    --- don't play the note at all if the sustain is 0
+    --- to allow for long monophonic notes to play without being cut off
+    if tetra.sustain > 0 then
+      player:play_note(tetra.note, tetra.volume, tetra.sustain)
+    end    
+    tetra.playing = true
   end
-
-  tetra.playing = true
+  
 end
 
 
@@ -407,8 +407,8 @@ function create_tetra(pattern_name, keys)
   tetra.keys = keys
   tetra.playing = false
   tetra.note = get_random_note_in_scale()
-  tetra.length = 1
-  tetra.volume = 1
+  tetra.sustain = 1.0
+  tetra.volume = 1.0
   tetra.ratchet = 1
   tetra.interval = 1
 
@@ -692,10 +692,10 @@ function enc(e, d) --------------- enc() is automatically called by norns
         dials[1].title = music.note_num_to_name(focus_tetra.note, true)
 
     elseif e == 2 then      
-      focus_tetra.length = util.clamp(focus_tetra.length + d * (max_length / 50), 0, max_length)     
-      --- TODO: update the default shape length so that new tetras have the same values     
+      focus_tetra.sustain = util.clamp(focus_tetra.sustain + d * (max_sustain / 24), 0, max_sustain)     
+      --- TODO: update the default shape sustain so that new tetras have the same values     
       --- normalize the value to 0-1 for the dial
-      dials[2]:set_value(focus_tetra.length / max_length)
+      dials[2]:set_value(focus_tetra.sustain / max_sustain)
 
     elseif e == 3 then      
       focus_tetra.volume = util.clamp(focus_tetra.volume + d * (max_volume / 50), 0, max_volume)
@@ -705,7 +705,7 @@ function enc(e, d) --------------- enc() is automatically called by norns
     end
   
     --- if focus_tetra is playing, update the note to hear the result of the change
-    --- but exclude the length changes
+    --- but exclude the sustain changes
     if focus_tetra.playing and e ~= 2 then
       -- print("playing")
       play_tetra(focus_tetra)
@@ -788,14 +788,14 @@ function grid_redraw()
     for j, key in ipairs(tetra.keys) do
       if tetra.pressed then
         tetra.level = 13
-      elseif tetra == focus_tetra then
-        if tetra.playing then
+      elseif tetra.playing then
+        if tetra.sustain > 0 then
           tetra.level = 15
         else
-          tetra.level = 10
+          tetra.level = 2
         end
-      elseif tetra.playing then
-        tetra.level = 15
+      elseif tetra == focus_tetra then
+        tetra.level = 10  
       else 
         tetra.level = 3
       end
@@ -918,25 +918,43 @@ function redraw()
     screen.font_size(8) 
     screen.line_width(1)
 
+    --- draw the dials
+
+    if focus_tetra.sustain == 0 then
+      dials[2].title = "rest"
+    else
+      dials[2].title = "sustain"
+    end
+
     for i = 1,3 do
       dials[i]:redraw()
     end
     
-    --- draw the interval and ratchet
+    --- draw the interval and ratchet buttons
+    screen.line_width(0.5)
     screen.circle(48, 54, 8)
     screen.move(48, 56)
     screen.text_center(focus_tetra.interval)
     screen.move(20, 56)
     screen.text_center("interval")
-    screen.stroke()
+
+    if k2_hold and not k3_hold then
+      screen.fill()
+    else
+      screen.stroke()
+    end
+
     screen.circle(76, 54, 8)
-    screen.stroke()
     screen.move(76, 56)
     screen.text_center(focus_tetra.ratchet)
     screen.move(103, 56)
     screen.text_center("ratchet")
-
-    screen.stroke()
+  
+    if k3_hold and not k2_hold then
+      screen.fill()
+    else
+      screen.stroke()
+    end
   else
     screen.level(15)
     screen.font_size(19) 
