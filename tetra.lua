@@ -847,7 +847,6 @@ function sequence_clock()
        
         end
 
-
         local tetra = group.tetras[group.tetra_sequence_index]
               
         if not tetra.pressed then
