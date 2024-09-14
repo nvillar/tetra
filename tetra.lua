@@ -57,10 +57,6 @@ scale_notes = {}
 max_length_beats = 4
 --- max volume of a tetra
 max_volume = 2.00
---- max ratchet value
-max_ratchet = 4
---- max interval value
-max_interval = 4
 --- number of keys that need to be pressed simultaneously
 --- on a tetra in order to delete it
 delete_keypress = 3
@@ -84,9 +80,7 @@ function init()
   nb:init()
   message = "TETRA"
   screen_dirty = true 
-  screen_redraw_clock_id = clock.run(screen_redraw_clock)
-  grid_redraw_clock_id = clock.run(grid_redraw_clock) 
-  sequencer_clock_id = clock.run(sequencer_clock)
+
 
   local scale_names = {}
   for i = 1, #music.SCALES do
@@ -111,6 +105,14 @@ function init()
 
   build_scale()
 
+  params:add_separator("scale_params", "sequencer")
+  params:add{type = "number", id = "max_ratchet", name = "max ratchet",
+  min = 1, max = 12, default = 4,
+  action = function() adjust_seq_params() end}
+  params:add{type = "number", id = "max_interval", name = "max interval",
+  min = 1, max = 12, default = 4,
+  action = function() adjust_seq_params() end}
+
   params:add_separator("shape_params", "shapes")
   for i, shape in ipairs(shapes) do
     nb:add_param(shape, shape) 
@@ -125,6 +127,10 @@ function init()
   dials[3] = UI.Dial.new(94, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
   reset()
+
+  screen_redraw_clock_id = clock.run(screen_redraw_clock)
+  grid_redraw_clock_id = clock.run(grid_redraw_clock) 
+  sequencer_clock_id = clock.run(sequencer_clock)
 
   params:default()
 end
@@ -718,6 +724,20 @@ function get_random_note_in_scale()
 end
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+--- go through all tetras and make sure their sequencer parameters 
+--- (interval and ratchets) are within bounds
+-------------------------------------------------------------------------------
+function adjust_seq_params() 
+  for i, tetra in ipairs(tetras) do
+    if tetra.interval > params:get("max_interval") then
+      tetra.interval = params:get("max_interval")
+    end
+    if tetra.ratchet > params:get("max_ratchet") then
+      tetra.ratchet = params:get("max_ratchet")
+    end
+  end
+end
 
 -------------------------------------------------------------------------------
 --- norns controls event handlers
@@ -808,12 +828,12 @@ function key(k, z) ------------------ key() is automatically called by norns
     if focus_tetra ~= nil then
       if k == 2 then
         focus_tetra.ratchet = focus_tetra.ratchet + 1
-        if focus_tetra.ratchet > max_ratchet then
+        if focus_tetra.ratchet > params:get("max_ratchet") then
           focus_tetra.ratchet = 1
         end
       elseif k == 3 then
         focus_tetra.interval = focus_tetra.interval + 1
-        if focus_tetra.interval > max_interval then
+        if focus_tetra.interval > params:get("max_interval") then
           focus_tetra.interval = 1
         end
       end
@@ -879,6 +899,8 @@ function sequencer_clock()
   
   local fractional_beat = 1
   while true do
+    local max_ratchet = params:get("max_ratchet")
+    local max_interval = params:get("max_interval")
     --- sync to the clock
     clock.sync(1/max_ratchet)    
     if sequencer_playing then
