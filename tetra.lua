@@ -68,8 +68,6 @@ delete_keypress = 3
 nb.voice_count = 1
 --- state of the sequencer playback
 sequencer_playing = true
---- current fractional beat
-fractional_beat = 1
 --- ui dials
 dials = {}
 --- enable screen anti-aliasing
@@ -153,7 +151,6 @@ function reset()
   end
   tetras = {}
   groups = {}
-  fractional_beat = 1
   grid_dirty = true
   screen_dirty = true
 end
@@ -880,6 +877,7 @@ end
 -------------------------------------------------------------------------------
 function sequencer_clock()
   
+  local fractional_beat = 1
   while true do
     --- sync to the clock
     clock.sync(1/max_ratchet)    
@@ -887,7 +885,25 @@ function sequencer_clock()
       
       for i, group in ipairs(groups) do
 
-        advance_sequence(group)
+        --- if the group is new, initialize the sequence
+        if group.tetra_sequence_index == nil then
+          group.tetra_sequence_index = 1
+          group.sequence_iteration = 1                         
+        --- advance the sequence if the fractional beat is 1   
+        elseif fractional_beat == 1 then         
+          --- advance by 1, loop back if at the end of the sequence
+          group.tetra_sequence_index = group.tetra_sequence_index + 1
+          if group.tetra_sequence_index > #group.tetras then
+            group.tetra_sequence_index = 1
+      
+            --- advance the sequence iteration
+            group.sequence_iteration = group.sequence_iteration + 1
+            if group.sequence_iteration > max_interval then
+              group.sequence_iteration = 1
+            end    
+          end        
+        end
+
         local tetra = group.tetras[group.tetra_sequence_index]
               
         if not tetra.pressed then
@@ -896,13 +912,6 @@ function sequencer_clock()
 
         --- check whether the tetra should be played in this sequence iteration
         if group.sequence_iteration % tetra.interval == 0 then          
-          if fractional_beat <= tetra.ratchet then
-            note_play(tetra)
-          end
-        else
-          --- skip playing the tetra and advance to the next
-          advance_sequence(group)
-          tetra = group.tetras[group.tetra_sequence_index]
           if fractional_beat <= tetra.ratchet then
             note_play(tetra)
           end
@@ -917,7 +926,7 @@ function sequencer_clock()
 
       fractional_beat = fractional_beat + 1
       if fractional_beat > max_ratchet then
-        fractional_beat = 1       
+        fractional_beat = 1
       end
 
     end
@@ -930,22 +939,7 @@ end
 --- and increments the sequence iteration
 -------------------------------------------------------------------------------
 function advance_sequence(group)
-  if group.tetra_sequence_index == nil then
-    group.tetra_sequence_index = 1
-    group.sequence_iteration = 1                  
-  elseif fractional_beat == 1 then         
-    --- advance by 1, loop back if at the end of the sequence
-    group.tetra_sequence_index = group.tetra_sequence_index + 1
-    if group.tetra_sequence_index > #group.tetras then
-      group.tetra_sequence_index = 1
-
-      --- advance the sequence iteration
-      group.sequence_iteration = group.sequence_iteration + 1
-      if group.sequence_iteration > max_interval then
-        group.sequence_iteration = 1
-      end    
-    end        
-  end
+  
 end
 
 
