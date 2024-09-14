@@ -1,20 +1,22 @@
 ---TETRA ><>
 ---github.com/nvillar/tetra/
 ---k1: exit
----k2: interval |  k2 + k3:   |
----k3: ratchet | start/stop |
+---k2: ratchet |  k2 + k3:   |
+---k3: interval | start/stop |
 ---e1: pitch
 ---e2: length
 ---e3: volume
 
+--- requires
 UI = require("ui")
 music = require("musicutil")
-
 nb = include("lib/nb/lib/nb")
 
+--- list of shapes for tetras
 shapes = {'O', 'I', 'T', 'S', 'Z', 'J', 'L'}
 
---- patterns for tetras
+--- patterns for tetras of each shape
+--- some shape have multiple orientations
 patterns = {
   ["O0"]   = {{1,1}, {1,2}, {2,1}, {2,2}},    -- Square
   ["I0"]   = {{1,1}, {1,2}, {1,3}, {1,4}},    -- Line
@@ -38,32 +40,42 @@ patterns = {
 }
 
 --- list of grid keys, indexed by a coordinate in the format "x,y"
---- each key has a state: pressed, lit, unclaimed
---- pressed: true if the key is currently pressed'
+--- each key has the following states, which can be true or false:
+--- pressed: true if the key is currently pressed
 --- lit: true if the key light is lit
---- unclaimed: true if the key is not part of a tetra
+--- unclaimed: true if the key is lit and not part of a tetra
 grid_keys = {}
+--- list of tetras
 tetras = {}
-groups = {}
-engine_config = {}
-encoder_config = {}
-
-scale_notes = {}
-max_length_beats = 4
-max_volume = 2.00
-
-dials = {}
-
-delete_keypress = 3
+--- currently focused tetra
 focus_tetra = nil
-
-g = grid.connect()
-
+--- list of groups
+groups = {}
+--- list of notes in current scale
+scale_notes = {}
+--- max length of a tetra in beats
+max_length_beats = 4
+--- max volume of a tetra
+max_volume = 2.00
+--- max ratchet value
+max_ratchet = 4
+--- max interval value
+max_interval = 4
+--- number of keys that need to be pressed simultaneously
+--- on a tetra in order to delete it
+delete_keypress = 3
+--- number of midi voices for n.b. engine
 nb.voice_count = 1
-
+--- state of the sequencer playback
 sequencer_playing = true
-
+--- current fractional beat
+fractional_beat = 1
+--- ui dials
+dials = {}
+--- enable screen anti-aliasing
 screen.aa(1)
+--- connect to the grid
+g = grid.connect()
 
 -------------------------------------------------------------------------------
 --- init() is automatically called by norns
@@ -76,7 +88,7 @@ function init()
   screen_dirty = true 
   screen_redraw_clock_id = clock.run(screen_redraw_clock)
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
-  sequence_clock_id = clock.run(sequence_clock)
+  sequencer_clock_id = clock.run(sequencer_clock)
 
   local scale_names = {}
   for i = 1, #music.SCALES do
@@ -121,7 +133,7 @@ end
 
 
 -------------------------------------------------------------------------------
---- reset the state of the grid
+--- reset the state of the grid, stop all notes,
 --- clear all tetras, reset the grid_keys table
 -------------------------------------------------------------------------------
 function reset()
@@ -141,7 +153,9 @@ function reset()
   end
   tetras = {}
   groups = {}
+  fractional_beat = 1
   grid_dirty = true
+  screen_dirty = true
 end
 
 -------------------------------------------------------------------------------
@@ -206,10 +220,8 @@ function g.key(x, y, z)
       and #pressed_tetras == 1
       and focus_tetra ~= pressed_tetras[1] then
     focus_tetra = pressed_tetras[1]
-    --- hack - trigger the encoders to update the dials
-    enc(1, 0)
-    enc(2, 0)
-    enc(3, 0)
+    --- trigger all encoders with no deltas to update the ui dials
+    enc(0, 0)
     print("focus " .. pressed_tetras[1].pattern)
   end
 
@@ -222,6 +234,7 @@ function g.key(x, y, z)
   --- if no tetras are pressed, reset the focus
   elseif pressed and #pressed_tetras == 0 then
     focus_tetra = nil
+    screen_dirty = true
   end
 
   --- start playing pressed tetras if they are not already playing
@@ -235,7 +248,7 @@ function g.key(x, y, z)
   end
 
   grid_dirty = true
-  screen_dirty = true
+  -- screen_dirty = true
 end
 
 -------------------------------------------------------------------------------
@@ -490,6 +503,7 @@ function update_tetras()
         note_off(tetra)   
         table.remove(tetras, i)  
         parse_groups(tetra)
+        screen_dirty = true
         break
         
       else
@@ -711,14 +725,13 @@ end
 -------------------------------------------------------------------------------
 --- norns controls event handlers
 -------------------------------------------------------------------------------
---- encoder 
+--- enc() is automatically called by norns
+--- calling enc() with a e value of 0 will force all dials to update 
 -------------------------------------------------------------------------------
 function enc(e, d) --------------- enc() is automatically called by norns
   if focus_tetra ~= nil then    
-    local enc_config = encoder_config[focus_tetra.pattern]
     
-    if e == 1 then 
-
+    if e == 0 or e == 1 then 
         if focus_tetra.playing then
           note_off(focus_tetra)
         end
@@ -733,14 +746,16 @@ function enc(e, d) --------------- enc() is automatically called by norns
 
         dials[1]:set_value(math.abs(focus_tetra.note - scale_notes[1]) / (scale_notes[#scale_notes] - scale_notes[1]))
         dials[1].title = music.note_num_to_name(focus_tetra.note, true)
-
-    elseif e == 2 then
+    end 
+    
+    if e == 0 or e == 2 then
       --- duration of the tetra note in beats, when played by a sequencer      
       focus_tetra.length_beats = util.clamp(focus_tetra.length_beats + d * (max_length_beats / 24), 0, max_length_beats)     
       --- normalize the value to 0-1 for the dial
       dials[2]:set_value(focus_tetra.length_beats / max_length_beats)
+    end
 
-    elseif e == 3 then      
+    if e == 0 or e == 3 then      
       focus_tetra.volume = util.clamp(focus_tetra.volume + d * (max_volume / 50), 0, max_volume)
       --- TODO: update the default shape velocity so that new tetras have the same values   \
       --- normalize the value to 0-1 for the dial
@@ -795,14 +810,14 @@ function key(k, z) ------------------ key() is automatically called by norns
 
     if focus_tetra ~= nil then
       if k == 2 then
-        focus_tetra.interval = focus_tetra.interval + 1
-        if focus_tetra.interval > 4 then
-          focus_tetra.interval = 1
+        focus_tetra.ratchet = focus_tetra.ratchet + 1
+        if focus_tetra.ratchet > max_ratchet then
+          focus_tetra.ratchet = 1
         end
       elseif k == 3 then
-        focus_tetra.ratchet = focus_tetra.ratchet + 1
-        if focus_tetra.ratchet > 4 then
-          focus_tetra.ratchet = 1
+        focus_tetra.interval = focus_tetra.interval + 1
+        if focus_tetra.interval > max_interval then
+          focus_tetra.interval = 1
         end
       end
     end
@@ -863,61 +878,79 @@ function grid_redraw()
 
 end
 -------------------------------------------------------------------------------
-function sequence_clock()
-  quarter_beat = 1
-
+function sequencer_clock()
+  
   while true do
     --- sync to the clock
-    clock.sync(1/4)    
+    clock.sync(1/max_ratchet)    
     if sequencer_playing then
       
       for i, group in ipairs(groups) do
 
-        if group.tetra_sequence_index == nil then
-          group.tetra_sequence_index = 1
-          group.sequence_iteration = 1                  
-        elseif quarter_beat == 1 then         
-          --- advance by 1, loop back if at the end of the sequence
-          group.tetra_sequence_index = group.tetra_sequence_index + 1
-          if group.tetra_sequence_index > #group.tetras then
-            group.tetra_sequence_index = 1
-
-            --- advance the sequence iteration
-            group.sequence_iteration = group.sequence_iteration + 1
-            if group.sequence_iteration > 4 then
-              group.sequence_iteration = 1
-            end    
-          end 
-       
-        end
-
+        advance_sequence(group)
         local tetra = group.tetras[group.tetra_sequence_index]
               
         if not tetra.pressed then
           tetra.playing = false
         end
 
+        --- check whether the tetra should be played in this sequence iteration
         if group.sequence_iteration % tetra.interval == 0 then          
-          if quarter_beat <= tetra.ratchet then
+          if fractional_beat <= tetra.ratchet then
+            note_play(tetra)
+          end
+        else
+          --- skip playing the tetra and advance to the next
+          advance_sequence(group)
+          tetra = group.tetras[group.tetra_sequence_index]
+          if fractional_beat <= tetra.ratchet then
             note_play(tetra)
           end
         end
 
-        if quarter_beat == 4 and not tetra.pressed then
+        if fractional_beat == max_ratchet and not tetra.pressed then
           tetra.playing = false
         end
 
         grid_dirty = true
       end
 
-      quarter_beat = quarter_beat + 1
-      if quarter_beat > 4 then
-        quarter_beat = 1       
+      fractional_beat = fractional_beat + 1
+      if fractional_beat > max_ratchet then
+        fractional_beat = 1       
       end
 
     end
   end
 end
+
+-------------------------------------------------------------------------------
+--- advance_sequence() advances the sequence of a group to the next tetra
+--- if it gets to the end of the sequence, it loops back to the beginning
+--- and increments the sequence iteration
+-------------------------------------------------------------------------------
+function advance_sequence(group)
+  if group.tetra_sequence_index == nil then
+    group.tetra_sequence_index = 1
+    group.sequence_iteration = 1                  
+  elseif fractional_beat == 1 then         
+    --- advance by 1, loop back if at the end of the sequence
+    group.tetra_sequence_index = group.tetra_sequence_index + 1
+    if group.tetra_sequence_index > #group.tetras then
+      group.tetra_sequence_index = 1
+
+      --- advance the sequence iteration
+      group.sequence_iteration = group.sequence_iteration + 1
+      if group.sequence_iteration > max_interval then
+        group.sequence_iteration = 1
+      end    
+    end        
+  end
+end
+
+
+-------------------------------------------------------------------------------
+--- grid_redraw_clock() is called whenever grid_dirty == true
 -------------------------------------------------------------------------------
 function grid_redraw_clock()
   while true do
@@ -949,8 +982,8 @@ end
 -------------------------------------------------------------------------------
 function redraw()
   
+  print("redraw")
   screen.clear() --------------- clear space
-  screen.aa(1) ----------------- enable anti-aliasing
   screen.font_face(1)
   screen.update()
 
@@ -975,29 +1008,38 @@ function redraw()
     
     --- draw the interval and ratchet buttons
     screen.line_width(0.5)
-    screen.circle(48, 54, 8)
-    screen.move(48, 56)
-    screen.text_center(focus_tetra.interval)
-    screen.move(20, 56)
-    screen.text_center("interval")
+    
+    screen.move(8, 54)
+    screen.text_center("play")
+    screen.stroke()
 
+    screen.circle(27, 52, 7)
+    screen.move(27, 54)
+    screen.text_center(focus_tetra.ratchet)
     if k2_hold and not k3_hold then
       screen.fill()
     else
       screen.stroke()
     end
 
-    screen.circle(76, 54, 8)
-    screen.move(76, 56)
-    screen.text_center(focus_tetra.ratchet)
-    screen.move(103, 56)
-    screen.text_center("ratchet")
-  
+    screen.move(61, 54)
+    screen.text_center("times every")
+    screen.stroke()
+
+    screen.circle(97, 52, 7)
+    screen.move(97, 54)
+    screen.text_center(focus_tetra.interval)
+
     if k3_hold and not k2_hold then
       screen.fill()
     else
       screen.stroke()
     end
+
+    screen.move(118, 54)
+    screen.text_center("loops")
+    screen.stroke()
+  
   else
     screen.level(15)
     screen.font_size(19) 
@@ -1084,5 +1126,5 @@ function cleanup()
   reset()
   clock.cancel(screen_redraw_clock_id)
   clock.cancel(grid_redraw_clock_id)
-  clock.cancel(sequence_clock_id)
+  clock.cancel(sequencer_clock_id)
 end
