@@ -252,7 +252,6 @@ function note_play(tetra)
     --- to allow for long monophonic notes to play without being cut off
     if tetra.length_beats > 0 then
       local length_sec = clock.get_beat_sec () * tetra.length_beats
-      print("playing note for " .. length_sec .. " seconds")
       player:play_note(tetra.note, tetra.volume, length_sec)
     end    
     tetra.playing = true
