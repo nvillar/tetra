@@ -53,8 +53,6 @@ focus_tetra = nil
 groups = {}
 --- list of notes in current scale
 scale_notes = {}
---- max length of a tetra in beats
-max_length_beats = 4
 --- max volume of a tetra
 max_volume = 2.00
 --- number of keys that need to be pressed simultaneously
@@ -108,10 +106,13 @@ function init()
   params:add_separator("scale_params", "sequencer")
   params:add{type = "number", id = "max_ratchet", name = "max ratchet",
   min = 1, max = 12, default = 4,
-  action = function() adjust_seq_params() end}
+  action = function() bound_seq_params() end}
   params:add{type = "number", id = "max_interval", name = "max interval",
   min = 1, max = 12, default = 4,
-  action = function() adjust_seq_params() end}
+  action = function() bound_seq_params() end}
+  params:add{type = "number", id = "max_length", name = "max length",
+  min = 1, max = 12, default = 4,
+  action = function() bound_seq_params() end}
 
   params:add_separator("shape_params", "shapes")
   for i, shape in ipairs(shapes) do
@@ -728,7 +729,7 @@ end
 --- go through all tetras and make sure their sequencer parameters 
 --- (interval and ratchets) are within bounds
 -------------------------------------------------------------------------------
-function adjust_seq_params() 
+function bound_seq_params() 
   for i, tetra in ipairs(tetras) do
     if tetra.interval > params:get("max_interval") then
       tetra.interval = params:get("max_interval")
@@ -736,7 +737,12 @@ function adjust_seq_params()
     if tetra.ratchet > params:get("max_ratchet") then
       tetra.ratchet = params:get("max_ratchet")
     end
+    if tetra.length_beats > params:get("max_length") then
+      tetra.length_beats = params:get("max_length")
+    end
   end
+  --- trigger all encoders with no deltas to update the ui dials
+  enc(0, 0)
 end
 
 -------------------------------------------------------------------------------
@@ -766,10 +772,11 @@ function enc(e, d) --------------- enc() is automatically called by norns
     end 
     
     if e == 0 or e == 2 then
+      local max_length = params:get("max_length")
       --- duration of the tetra note in beats, when played by a sequencer      
-      focus_tetra.length_beats = util.clamp(focus_tetra.length_beats + d * (max_length_beats / 24), 0, max_length_beats)     
+      focus_tetra.length_beats = util.clamp(focus_tetra.length_beats + d * (max_length / 24), 0, max_length)     
       --- normalize the value to 0-1 for the dial
-      dials[2]:set_value(focus_tetra.length_beats / max_length_beats)
+      dials[2]:set_value(focus_tetra.length_beats / max_length)
     end
 
     if e == 0 or e == 3 then      
