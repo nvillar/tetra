@@ -7,7 +7,6 @@ Sequences are created from groups of adjacent tetras.
 
 ## Tetras
 
-### Creating tetras
 Tetras are formed on the grid by four adjacent keys, excluding diagonals.  
 There are 7 possible shapes (think tetris): I, O, T, L, J, S, Z.  
 Some shapes have two or four possible orientations.  
