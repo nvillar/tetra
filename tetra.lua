@@ -10,6 +10,7 @@
 --- requires
 UI = require("ui")
 music = require("musicutil")
+tab = require("tabutil")
 nb = include("lib/nb/lib/nb")
 
 --- list of shapes for tetras
@@ -47,10 +48,10 @@ patterns = {
 grid_keys = {}
 --- list of tetras
 tetras = {}
---- currently focused tetra
-focus_tetra = nil
 --- list of groups
 groups = {}
+--- currently focused tetra
+focus_tetra = nil
 --- list of notes in current scale
 scale_notes = {}
 --- max volume of a tetra
@@ -79,11 +80,15 @@ function init()
   message = "TETRA"
   screen_dirty = true 
 
-
   local scale_names = {}
   for i = 1, #music.SCALES do
     table.insert(scale_names, music.SCALES[i].name)
   end
+
+  params:add_separator("state_params", "load + save")
+  params:add{type = "option", id = "state_slot", name = "save slot", options = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"}, default = 1}
+  params:add{type = "trigger", id = "load_state", name = "load", action = function() load_state(params:get("state_slot")) end}
+  params:add{type = "trigger", id = "save_state", name = "save", action = function() save_state(params:get("state_slot")) end}
 
   params:add_separator("scale_params", "scale")
   -- setting root notes using params
@@ -103,7 +108,17 @@ function init()
 
   build_scale()
 
-  params:add_separator("scale_params", "sequencer")
+  --- shape <-> voice setup
+  params:add_separator("shape_params", "shapes")
+  for i, shape in ipairs(shapes) do
+    nb:add_param(shape, shape) 
+  end
+  
+  params:add_separator("voice_params", "voices")
+  nb:add_player_params()
+
+  --- sequencer parameters
+  params:add_separator("sequencer_params", "sequencer")
   params:add{type = "number", id = "max_ratchet", name = "max ratchet",
   min = 1, max = 12, default = 4,
   action = function() bound_seq_params() end}
@@ -113,14 +128,6 @@ function init()
   params:add{type = "number", id = "max_length", name = "max length",
   min = 1, max = 12, default = 4,
   action = function() bound_seq_params() end}
-
-  params:add_separator("shape_params", "shapes")
-  for i, shape in ipairs(shapes) do
-    nb:add_param(shape, shape) 
-  end
-  
-  params:add_separator("voice_params", "voices")
-  nb:add_player_params()
   
   --- x, y, size, value, min_value, max_value, rounding, start_value, markers, units, title
   dials[1] = UI.Dial.new(10, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','note')
@@ -252,7 +259,6 @@ function g.key(x, y, z)
   end
 
   grid_dirty = true
-  -- screen_dirty = true
 end
 
 -------------------------------------------------------------------------------
@@ -1079,11 +1085,52 @@ function redraw()
     end
   end
   
-  screen.fill() ---------------- fill the termini and message at once
-  screen.update() -------------- update space
+  screen.fill() 
+  screen.update()
 end
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+--- save_state() and load_state() save and load the state of the script
+-------------------------------------------------------------------------------
+function save_state(slot)
+  local filename = norns.state.data..slot.."_save_tetra.txt"
+
+  print("saving state to " .. filename)
+
+  local state = {}
+  state.tetras = tetras
+  state.groups = groups
+  state.grid_keys = grid_keys
+  state.focus_tetra = focus_tetra
+  state.scale_notes = scale_notes
+  state.sequencer_playing = sequencer_playing
+ 
+  tab.save(state, filename)
+end
+-------------------------------------------------------------------------------
+function load_state(slot)
+  local filename = norns.state.data..slot.."_save_tetra.txt"
+  local file_exists = util.file_exists(filename)
+  
+  print ("loading state from " .. filename)
+
+  if not file_exists then
+    return
+  end
+
+  reset()
+  local state = tab.load(filename)
+  tetras = state.tetras
+  groups = state.groups
+  grid_keys = state.grid_keys
+  focus_tetra = state.focus_tetra
+  scale_notes = state.scale_notes
+  sequencer_playing = state.sequencer_playing
+
+  grid_dirty = true
+  screen_dirty = true
+end
 
 -------------------------------------------------------------------------------
 --- debug functions
