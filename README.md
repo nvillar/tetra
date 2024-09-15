@@ -17,7 +17,7 @@ When a tetra is completed, it starts to act as a single button on the grid: pres
 will activate it and trigger a sound. The sound is determined by the shape of the tetra.  
 This script uses the [n.b. voice library](https://llllllll.co/t/n-b-et-al-v0-1/60374), and each shape can
 be associated with any installed n.b. voice.  
-The initial note played by the tetra is chosen randomly from a scale, which can be changed from the parameters menu.  
+The initial note played by the tetra is chosen randomly from the scale specified in the PARAMETERS>>EDIT menu.  
 
 ### Adjusting tetras
 There are several possible adjustments to the sound of a tetra: note, length, volume, ratchet and iteration,  
