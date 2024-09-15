@@ -73,8 +73,8 @@ are recommended as a starting point. MIDI is supported by n.b. out of the box.
 
 3. Go to the parameters menu and select the voice for each tetra shape. Two PSET files
 are included with the script, which can be loaded from the PARAMETERS>>PSET menu (make sure you have installed and enabled the necessary voices first):    
-    - polyemp: uses the (emplaitress}[https://github.com/sixolet/emplaitress] and (polyperc)[https://github.com/dstroud/nb_polyperc] voices  
-    - mannequins: uses the (emplaitress}[https://github.com/sixolet/emplaitress], (crow)[https://github.com/sixolet/nb_crow], (just friends)[https://github.com/sixolet/nb_jf], and (W/Syn)[https://github.com/sixolet/nb_wsyn] voices
+    - polyemp: uses the (emplaitress)[https://github.com/sixolet/emplaitress] and (polyperc)[https://github.com/dstroud/nb_polyperc] voices  
+    - mannequins: uses the (emplaitress)[https://github.com/sixolet/emplaitress], (crow)[https://github.com/sixolet/nb_crow], (just friends)[https://github.com/sixolet/nb_jf], and (W/Syn)[https://github.com/sixolet/nb_wsyn] voices
 
 ## Thank you
 
