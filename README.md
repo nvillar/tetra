@@ -68,7 +68,7 @@ but have only been tested with 128 grid)
     ;install https://github.com/nvillar/tetra
 
 2. [Install one or more n.b. voices](https://llllllll.co/t/n-b-et-al-v0-1/60374/155)  
-Enable each voice in SYSTEM>>MODS and restart. The (emplaitress}[https://github.com/sixolet/emplaitress] and (polyperc)[https://github.com/dstroud/nb_polyperc] voices  
+Enable each voice in SYSTEM>>MODS and restart. The [emplaitress](https://github.com/sixolet/emplaitress) and [polyperc](https://github.com/dstroud/nb_polyperc) voices  
 are recommended as a starting point. MIDI is supported by n.b. out of the box.  
 
 3. Go to the parameters menu and select the voice for each tetra shape. Two PSET files
