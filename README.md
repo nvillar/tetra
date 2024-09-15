@@ -78,15 +78,7 @@ are included with the script, which can be loaded from the PARAMETERS>>PSET menu
 ## Thank you
 
 Thank you the monome community, especially @tehn, @dndrks for the study material,  
-@tyleretters for the nornsilerplate, and @sixolet for the n.b. voice library.  
-
-    https://github.com/monome/norns
-
-    https://github.com/northern-information/nornsilerplate
-
-    https://github.com/sixolet/nb
-
-
+@tyleretters for the nornsilerplate, and @sixolet for the n.b. voice library.
 
 
 
