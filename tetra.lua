@@ -1042,8 +1042,8 @@ function redraw()
     screen.text_center("play")
     screen.stroke()
 
-    screen.circle(27, 52, 7)
-    screen.move(27, 54)
+    screen.circle(26, 52, 6)
+    screen.move(26, 54)
     screen.text_center(focus_tetra.ratchet)
     if k2_hold and not k3_hold then
       screen.fill()
@@ -1051,12 +1051,12 @@ function redraw()
       screen.stroke()
     end
 
-    screen.move(61, 54)
+    screen.move(60, 54)
     screen.text_center("times every")
     screen.stroke()
 
-    screen.circle(97, 52, 7)
-    screen.move(97, 54)
+    screen.circle(96, 52, 6)
+    screen.move(96, 54)
     screen.text_center(focus_tetra.interval)
 
     if k3_hold and not k2_hold then
@@ -1065,7 +1065,7 @@ function redraw()
       screen.stroke()
     end
 
-    screen.move(118, 54)
+    screen.move(117, 54)
     screen.text_center("loops")
     screen.stroke()
   
