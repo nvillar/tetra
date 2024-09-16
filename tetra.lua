@@ -266,9 +266,7 @@ end
 --- with the tetra, if any, for the length of the tetra, then stops the note
 -------------------------------------------------------------------------------
 function note_play(tetra)
-  --- get first character of tetra.pattern to determine the voice_id
-  local id = string.sub(tetra.pattern, 1, 1)
-  local player = params:lookup_param(id):get_player()
+  local player = params:lookup_param(tetra.shape):get_player()
 
   if player ~= nil then
     --- don't play the note at all if the length is 0
@@ -286,9 +284,7 @@ end
 --- with the tetra, if any
 -------------------------------------------------------------------------------
 function note_on(tetra)
-  --- get first character of tetra.pattern to determine the voice_id
-  local id = string.sub(tetra.pattern, 1, 1)
-  local player = params:lookup_param(id):get_player()
+  local player = params:lookup_param(tetra.shape):get_player()
 
   if player ~= nil then
     player:note_on(tetra.note, tetra.volume)
@@ -301,9 +297,7 @@ end
 --- with the tetra, if any
 -------------------------------------------------------------------------------
 function note_off(tetra)
-  --- get first character of tetra.pattern to determine the voice_id
-  local id = string.sub(tetra.pattern, 1, 1)
-  local player = params:lookup_param(id):get_player()
+  local player = params:lookup_param(tetra.shape):get_player()
 
   if player ~= nil then
     player:note_off(tetra.note)
@@ -464,6 +458,7 @@ function create_tetra(pattern_name, keys)
   tetra.new = true
   tetra.pressed = false
   tetra.pattern = pattern_name
+  tetra.shape = string.sub(tetra.pattern, 1, 1)
   tetra.keys = keys
   tetra.playing = false
   tetra.note = get_random_note_in_scale()
