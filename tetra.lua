@@ -78,17 +78,25 @@ function init()
   print("--- n.b. init ---")
   nb:init()
 
+   --- sequencer params ---------------------
+   params:add_group("sequencer_params", "SEQUENCER", 3)
+   params:add{type = "number", id = "max_ratchet", name = "max ratchet",
+   min = 1, max = 12, default = 4,
+   action = function() bound_seq_params() end}
+   params:add{type = "number", id = "max_interval", name = "max interval",
+   min = 1, max = 12, default = 4,
+   action = function() bound_seq_params() end}
+   params:add{type = "number", id = "max_length", name = "max length",
+   min = 1, max = 12, default = 4,
+   action = function() bound_seq_params() end}
+  
+  --- scales params ------------------------
   local scale_names = {}
   for i = 1, #music.SCALES do
     table.insert(scale_names, music.SCALES[i].name)
   end
-
-  params:add_separator("state_params", "load + save")
-  params:add{type = "option", id = "state_slot", name = "save slot", options = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"}, default = 1}
-  params:add{type = "trigger", id = "load_state", name = "load", action = function() load_state(params:get("state_slot")) end}
-  params:add{type = "trigger", id = "save_state", name = "save", action = function() save_state(params:get("state_slot")) end}
-
-  params:add_separator("scale_params", "scale")
+  
+  params:add_group("scale_params", "SCALE", 3)
   -- setting root notes using params
   params:add{type = "number", id = "root_note", name = "root note",
     min = 0, max = 127, default = 36, formatter = function(param) return music.note_num_to_name(param:get(), true) end,
@@ -106,39 +114,42 @@ function init()
 
   build_scale()
 
-  --- shape <-> voice setup
+  --- save params --------------------------
+  params:add_separator("state_params", "load + save")
+  params:add{type = "option", id = "state_slot", name = "save slot #", options = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"}, default = 1}
+  params:add{type = "trigger", id = "load_state", name = "load", action = function() load_state(params:get("state_slot")) end}
+  params:add{type = "trigger", id = "save_state", name = "save", action = function() save_state(params:get("state_slot")) end}
+
+
+  --- shapes params --------------------------
   params:add_separator("shape_params", "shapes")
   for i, shape in ipairs(shapes) do
     nb:add_param(shape, shape) 
   end
   
+  --- voices params --------------------------
   params:add_separator("voice_params", "voices")
   nb:add_player_params()
 
-  --- sequencer parameters
-  params:add_separator("sequencer_params", "sequencer")
-  params:add{type = "number", id = "max_ratchet", name = "max ratchet",
-  min = 1, max = 12, default = 4,
-  action = function() bound_seq_params() end}
-  params:add{type = "number", id = "max_interval", name = "max interval",
-  min = 1, max = 12, default = 4,
-  action = function() bound_seq_params() end}
-  params:add{type = "number", id = "max_length", name = "max length",
-  min = 1, max = 12, default = 4,
-  action = function() bound_seq_params() end}
+  --- default params --------------------------
+  params:default()
   
+  --- ui dials --------------------------------
   --- x, y, size, value, min_value, max_value, rounding, start_value, markers, units, title
   dials[1] = UI.Dial.new(10, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','note')
   dials[2] = UI.Dial.new(59, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','length')
   dials[3] = UI.Dial.new(94, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
-  params:default()
+  --- reset the state of the grid, stop all notes,
+  --- clear all tetras, reset the grid_keys table
   reset()
 
+  --- start the clocks
   screen_redraw_clock_id = clock.run(screen_redraw_clock)
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
   sequencer_clock_id = clock.run(sequencer_clock)
 
+  --- ready!
   print("--- tetra init ---")
 end
 
