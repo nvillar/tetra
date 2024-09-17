@@ -75,7 +75,7 @@ g = grid.connect()
 -------------------------------------------------------------------------------
 
 function init() 
-  print("n.b. init")
+  print("--- n.b. init ---")
   nb:init()
 
   local scale_names = {}
@@ -139,7 +139,7 @@ function init()
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
   sequencer_clock_id = clock.run(sequencer_clock)
 
-  print("tetra init")
+  print("--- tetra init ---")
 end
 
 
@@ -1001,6 +1001,7 @@ function screen_redraw_clock() ----- a clock that draws space
     end
   end
 end
+
 -------------------------------------------------------------------------------
 --- redraw() is called by screen_redraw_clock()
 --- and also automatically by norns when the script comes back into focus
@@ -1008,9 +1009,8 @@ end
 --- while in the menu
 -------------------------------------------------------------------------------
 function redraw()
-  
-  print("redraw")
-  screen.clear() --------------- clear space
+  --- print("redraw")
+  screen.clear()
   screen.font_face(1)
   screen.update()
 
@@ -1094,7 +1094,7 @@ end
 function save_state(slot)
   local filename = norns.state.data..slot.."_save_tetra.txt"
 
-  print("saving state to " .. filename)
+  --- print("saving state to " .. filename)
 
   local state = {}
   state.tetras = tetras
@@ -1111,7 +1111,7 @@ function load_state(slot)
   local filename = norns.state.data..slot.."_save_tetra.txt"
   local file_exists = util.file_exists(filename)
   
-  print ("loading state from " .. filename)
+  --- print ("loading state from " .. filename)
 
   if not file_exists then
     return
