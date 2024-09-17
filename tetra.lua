@@ -40,7 +40,7 @@ patterns = {
   ["J270"] = {{1,1}, {2,1}, {3,1}, {1,0}},
 }
 
---- list of grid keys, indexed by a coordinate in the format "x,y"
+--- list of grid keys
 --- each key has the following states, which can be true or false:
 --- pressed: true if the key is currently pressed
 --- lit: true if the key light is lit
@@ -159,8 +159,10 @@ function reset()
   --- init grid_keys table
   for x = 1, w do
     for y = 1, h do
-      local coord = x .. "," .. y
-      grid_keys[coord] = {x = x, y = y, pressed = false, lit = false, unclaimed = false}
+      if not grid_keys[x] then
+        grid_keys[x] = {}
+      end
+      grid_keys[x][y] = {x = x, y = y, pressed = false, lit = false, unclaimed = false}
     end
   end
   tetras = {}
@@ -174,44 +176,38 @@ end
 -------------------------------------------------------------------------------
 function g.key(x, y, z)
 
-  --- prepare grid coordinates
   --- get the dimensions of the grid
   local w, h = g.cols, g.rows
-  --- grid_keys table is indexed by a coordinate in the format "x,y"
-  --- for a 128 grid (8 rows, 16 columns), coordinates will be in 
-  --- the range of "1,1" to "8,16"
-  --- prepare the coordinate for the key that was pressed
-  local coord =  x .. "," .. y
   
   --- update the pressed state in the grid_keys table
   local pressed = false
   if z == 1 then
     pressed = true
   end 
-  grid_keys[coord].pressed = pressed
+  grid_keys[x][y].pressed = pressed
   
   --- process keys that are pressed and determine if they are lit or unclaimed
   --- turn key off if: it is unclaimed, pressed and lit
-  if grid_keys[coord].lit 
-        and grid_keys[coord].unclaimed 
+  if grid_keys[x][y].lit 
+        and grid_keys[x][y].unclaimed 
         and pressed then
-    grid_keys[coord].lit = false
-    grid_keys[coord].unclaimed = false --- unclaimable
+    grid_keys[x][y].lit = false
+    grid_keys[x][y].unclaimed = false --- unclaimable
 
   --- turn key on if is off and pressed, but only if 
   --- no tetras are pressed, otherwise be considered a translation,
   --- a condition that is handled further down the code
-  elseif not grid_keys[coord].lit 
+  elseif not grid_keys[x][y].lit 
       and #get_pressed_tetras() == 0
       and pressed then
-    grid_keys[coord].lit = true
-    grid_keys[coord].unclaimed = true
+    grid_keys[x][y].lit = true
+    grid_keys[x][y].unclaimed = true
   end
 
   --- check for special reset conditions
   --- reset if two diagonally opposite corners are pressed
-  if (grid_keys["1,1"].pressed and grid_keys[w .. "," .. h].pressed) or
-      (grid_keys["1,".. h].pressed and grid_keys[w..",1"].pressed) then
+  if (grid_keys[1][1].pressed and grid_keys[w][h].pressed) or
+      (grid_keys[1][h].pressed and grid_keys[w][1].pressed) then
     reset()
     return
   end
@@ -237,10 +233,10 @@ function g.key(x, y, z)
   end
 
   --- if a tetra is pressed and a available key is pressed, translate the tetra
-  if pressed and #pressed_tetras == 1 and not grid_keys[coord].lit then
+  if pressed and #pressed_tetras == 1 and not grid_keys[x][y].lit then
     local tetra = pressed_tetras[1]
-    if is_valid_location(tetra, grid_keys[coord]) then
-      translate_tetra(tetra, grid_keys[coord])
+    if is_valid_location(tetra, grid_keys[x][y]) then
+      translate_tetra(tetra, grid_keys[x][y])
     end
   --- if no tetras are pressed, reset the focus
   elseif pressed and #pressed_tetras == 0 then
@@ -405,35 +401,39 @@ end
 --- and the keys are marked as unclaimed = false (claimed by the tetra)
 -------------------------------------------------------------------------------
 function parse_tetras()
+
+  local w, h = g.cols, g.rows
+
   --- check if a tetra is present in the grid
   for pattern_name, pattern in pairs(patterns) do
-    for coord, grid_key in pairs(grid_keys) do
-      local x, y, unclaimed = grid_key.x, grid_key.y, grid_key.unclaimed
-      --- a tetra can only be formed from unclaimed keys
-      if unclaimed then
-        --- check if the pattern matches a set of lit, unclaimed keys
-        for i, pattern_key in ipairs(pattern) do
-          local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
-          local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
-          local tetra_key_coord = tetra_key_x .. "," .. tetra_key_y
-          --- if the key is not present in the grid or is not lit and unclaimed, break
-          if grid_keys[tetra_key_coord] == nil or not grid_keys[tetra_key_coord].unclaimed or not grid_keys[tetra_key_coord].lit then
-            break
-          end
-          --- if the last key in the pattern is found, create the tetra
-          if i == #pattern then
-            --- keep track of the keys that form the tetra
-            tetra_keys = {}
-            for i, pattern_key in ipairs(pattern) do
-              local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
-              local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
-              local tetra_key_coord = tetra_key_x .. "," .. tetra_key_y
-              table.insert(tetra_keys, {coord = tetra_key_coord, x = tetra_key_x, y = tetra_key_y})
-              --- mark the key as claimed
-              grid_keys[tetra_key_coord].unclaimed = false
+
+    for x = 1, w do
+      for y = 1, h do
+        local unclaimed = grid_key.x, grid_key.y, grid_key.unclaimed
+        --- a tetra can only be formed from unclaimed keys
+        if unclaimed then
+          --- check if the pattern matches a set of lit, unclaimed keys
+          for i, pattern_key in ipairs(pattern) do
+            local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
+            local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
+            --- if the key is not present in the grid or is not lit and unclaimed, break
+            if grid_keys[tetra_key_x][tetra_key_y] == nil or not grid_keys[tetra_key_x][tetra_key_x].unclaimed or not grid_keys[tetra_key_x][tetra_key_y].lit then
+              break
             end
-            --- create a new tetra
-            create_tetra(pattern_name, tetra_keys)        
+            --- if the last key in the pattern is found, create the tetra
+            if i == #pattern then
+              --- keep track of the keys that form the tetra
+              tetra_keys = {}
+              for i, pattern_key in ipairs(pattern) do
+                local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
+                local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
+                table.insert(tetra_keys, {x = tetra_key_x, y = tetra_key_y})
+                --- mark the key as claimed
+                grid_keys[tetra_key_x][tetra_key_y].unclaimed = false
+              end
+              --- create a new tetra
+              create_tetra(pattern_name, tetra_keys)        
+            end
           end
         end
       end
@@ -487,7 +487,7 @@ function update_tetras()
     local pressed_tetra_keys = 0
     for j, key in ipairs(tetra.keys) do
       --- count the number of keys in the tetra that are pressed
-      if grid_keys[key.coord].pressed then
+      if grid_keys[key.x][key.y].pressed then
         pressed_tetra_keys = pressed_tetra_keys + 1
       end
     end
@@ -497,8 +497,8 @@ function update_tetras()
       if tetra.pressed and pressed_tetra_keys == delete_keypress and tetra.new == false then
         --- if a tetra was already pressed and another key of the same tetra is pressed, delete it
         for k, key in ipairs(tetra.keys) do
-          grid_keys[key.coord].lit = false
-          grid_keys[key.coord].unclaimed = false
+          grid_keys[key.x][key.y].lit = false
+          grid_keys[key.x][key.y].unclaimed = false
         end
         --- tetra would have been focused, so reset focus
         focus_tetra = nil
@@ -543,7 +543,7 @@ function is_valid_location(tetra, new_key)
     --- calculate the new location for the key
     local new_x = key.x + dx
     local new_y = key.y + dy
-    local new_coord = new_x .. "," .. new_y
+
 
     --- check if the new location is within the boundaries of the grid
     if new_x < 1 or new_x > g.cols or new_y < 1 or new_y > g.rows then
@@ -561,9 +561,8 @@ function is_valid_location(tetra, new_key)
     end
 
     --- check if the new location is not occupied by an lit/unclaimed key or another tetra,
-    if (grid_keys[new_coord].lit or grid_keys[new_coord].unclaimed) and not self_overlap then
+    if (grid_keys[new_x][new_y].lit or grid_keys[new_x][new_y].unclaimed) and not self_overlap then
       print ("occupied")
-      print ("for tetra key at " .. key.x .. "," .. key.y .. " new coord: " .. new_coord .. " is lit: " .. tostring(grid_keys[new_coord].lit) .. ", unclaimed: " .. tostring(grid_keys[new_coord].unclaimed))
       return false
     end
   
@@ -586,24 +585,22 @@ function translate_tetra(tetra, new_key)
   for i, key in ipairs(tetra.keys) do
     local new_x = key.x + dx
     local new_y = key.y + dy
-    local new_coord = new_x .. "," .. new_y
-    new_locations[i] = {x = new_x, y = new_y, coord = new_coord}
+    new_locations[i] = {x = new_x, y = new_y}
   end
 
   -- update the keys at the old locations
   for i, key in ipairs(tetra.keys) do
-    grid_keys[key.coord].lit = false
-    grid_keys[key.coord].unclaimed = false
+    grid_keys[key.x][key.y].lit = false
+    grid_keys[key.x][key.y].unclaimed = false
   end
 
   -- update the keys at the new locations
   for i, key in ipairs(tetra.keys) do
     local new_location = new_locations[i]
-    grid_keys[new_location.coord].lit = true
-    grid_keys[new_location.coord].unclaimed = false
+    grid_keys[new_location.x][new_location.y].lit = true
+    grid_keys[new_location.x][new_location.y].unclaimed = false
     key.x = new_location.x
     key.y = new_location.y
-    key.coord = new_location.coord
   end
   print("translated tetra  " .. tetra.pattern)
   parse_groups(tetra)
@@ -631,7 +628,7 @@ end
 function get_pressed_tetra_key(tetra)
     if tetra.pressed then
       for j, key in ipairs(tetra.keys) do
-        if grid_keys[key.coord].pressed then
+        if grid_keys[key.x][key.y].pressed then
           return key
         end
       end
@@ -865,6 +862,9 @@ end
 --- grid display functions
 -------------------------------------------------------------------------------
 function grid_redraw()
+
+  local w, h = g.cols, g.rows
+  
   g:all(0)
 
   --- draw the tetras
@@ -888,14 +888,16 @@ function grid_redraw()
   end
   
   --- draw the unclaimed keys and pressed locations
-  for coord, grid_key in pairs(grid_keys) do
-    local x, y, pressed, lit, unclaimed = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.unclaimed
-    if lit then
-      if unclaimed then
-        g:led(x, y, 15)
+  for x = 1, w do
+    for y = 1, h do
+      local pressed, lit, unclaimed = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.unclaimed
+      if lit then
+        if unclaimed then
+          g:led(x, y, 15)
+        end
+      else
+        g:led(x, y, 0)
       end
-    else
-      g:led(x, y, 0)
     end
   end
 
@@ -1140,8 +1142,7 @@ function print_grid()
   for y = 1, h do
     local line = ""
     for x = 1, w do
-      local coord = x .. "," .. y
-      local key = grid_keys[coord]
+      local key = grid_keys[x][y]
       if key.lit then
           line = line .. "A"
       else
