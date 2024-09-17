@@ -75,10 +75,8 @@ g = grid.connect()
 -------------------------------------------------------------------------------
 
 function init() 
- 
+  print("n.b. init")
   nb:init()
-  message = "TETRA"
-  screen_dirty = true 
 
   local scale_names = {}
   for i = 1, #music.SCALES do
@@ -134,13 +132,14 @@ function init()
   dials[2] = UI.Dial.new(59, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','length')
   dials[3] = UI.Dial.new(94, 6, 22, 0, 0.0, 1.0, 0, 0, {},'','volume')  
 
+  params:default()
   reset()
 
   screen_redraw_clock_id = clock.run(screen_redraw_clock)
   grid_redraw_clock_id = clock.run(grid_redraw_clock) 
   sequencer_clock_id = clock.run(sequencer_clock)
 
-  params:default()
+  print("tetra init")
 end
 
 
@@ -150,7 +149,7 @@ end
 -------------------------------------------------------------------------------
 function reset()
   local w, h = g.cols, g.rows
-  print('--- reset ---')
+  print("--- tetra reset ---")
 
   note_stop_all()
 
@@ -178,12 +177,13 @@ function g.key(x, y, z)
 
   --- get the dimensions of the grid
   local w, h = g.cols, g.rows
-  
+
   --- update the pressed state in the grid_keys table
   local pressed = false
   if z == 1 then
     pressed = true
   end 
+
   grid_keys[x][y].pressed = pressed
   
   --- process keys that are pressed and determine if they are lit or unclaimed
@@ -229,7 +229,7 @@ function g.key(x, y, z)
     focus_tetra = pressed_tetras[1]
     --- trigger all encoders with no deltas to update the ui dials
     enc(0, 0)
-    print("focus " .. pressed_tetras[1].pattern)
+    --- print("focus " .. pressed_tetras[1].pattern)
   end
 
   --- if a tetra is pressed and a available key is pressed, translate the tetra
@@ -240,8 +240,10 @@ function g.key(x, y, z)
     end
   --- if no tetras are pressed, reset the focus
   elseif pressed and #pressed_tetras == 0 then
-    focus_tetra = nil
-    screen_dirty = true
+    if focus_tetra ~= nil then
+      focus_tetra = nil
+      screen_dirty = true
+    end
   end
 
   --- start playing pressed tetras if they are not already playing
@@ -254,6 +256,7 @@ function g.key(x, y, z)
     end
   end
 
+  --- print_grid()
   grid_dirty = true
 end
 
@@ -325,7 +328,7 @@ function parse_groups(moved_tetra)
  --- if tetra was part of a group, delete the group
  --- so that it can be re-calculated
  if in_group ~= nil then
-    print("deleted group")
+    --- print("deleted group")
     for i, group in ipairs(groups) do
       if group == in_group then
         table.remove(groups, i)
@@ -344,19 +347,19 @@ function parse_groups(moved_tetra)
               in_group = get_group(tetra) 
               local in_group_2 = get_group(tetra2)
               if in_group == nil and in_group_2 == nil then
-                print("created group with tetras " .. tetra.pattern .. " and " .. tetra2.pattern)
+                --- print("created group with tetras " .. tetra.pattern .. " and " .. tetra2.pattern)
                 local new_group = {}
                 new_group.tetras = {tetra, tetra2}
                 table.insert(groups, new_group)
               elseif in_group ~= nil and in_group_2 == nil then
-                print("added tetra " .. tetra2.pattern .. " to existing group")
+                --- print("added tetra " .. tetra2.pattern .. " to existing group")
                 table.insert(in_group.tetras, tetra2)
               elseif in_group == nil and in_group_2 ~= nil then
-                print("added tetra " .. tetra.pattern .. " to existing group")
+                --- print("added tetra " .. tetra.pattern .. " to existing group")
                 table.insert(in_group_2.tetras, tetra)
               elseif in_group ~= nil and in_group_2 ~= nil then
                 if in_group ~= in_group_2 then
-                  print("merged groups")
+                  --- print("merged groups")
                   for i, tetra in ipairs(in_group_2.tetras) do
                     table.insert(in_group.tetras, tetra)
                   end
@@ -409,15 +412,18 @@ function parse_tetras()
 
     for x = 1, w do
       for y = 1, h do
-        local unclaimed = grid_key.x, grid_key.y, grid_key.unclaimed
+        local grid_key = grid_keys[x][y]
         --- a tetra can only be formed from unclaimed keys
-        if unclaimed then
+        if grid_key.unclaimed then
           --- check if the pattern matches a set of lit, unclaimed keys
           for i, pattern_key in ipairs(pattern) do
             local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
             local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
             --- if the key is not present in the grid or is not lit and unclaimed, break
-            if grid_keys[tetra_key_x][tetra_key_y] == nil or not grid_keys[tetra_key_x][tetra_key_x].unclaimed or not grid_keys[tetra_key_x][tetra_key_y].lit then
+            if tetra_key_x < 1 or tetra_key_x > w or tetra_key_y < 1 or tetra_key_y > h or
+               grid_keys[tetra_key_x][tetra_key_y] == nil or not 
+               grid_keys[tetra_key_x][tetra_key_y].unclaimed or not 
+               grid_keys[tetra_key_x][tetra_key_y].lit then
               break
             end
             --- if the last key in the pattern is found, create the tetra
@@ -462,12 +468,12 @@ function create_tetra(pattern_name, keys)
   tetra.keys = keys
   tetra.playing = false
   tetra.note = get_random_note_in_scale()
-  tetra.length_beats = 1
+  tetra.length_beats = 0.1
   tetra.volume = 1.0
   tetra.ratchet = 1
   tetra.interval = 1
 
-  print("created tetra " .. tetra.pattern)
+  --- print("created tetra " .. tetra.pattern)
 
   table.insert(tetras, tetra)
   parse_groups(tetra)
@@ -504,7 +510,7 @@ function update_tetras()
         focus_tetra = nil
 
         --- delete the tetra        
-        print("deleting tetra " .. tetra.pattern)     
+        --- print("deleting tetra " .. tetra.pattern)     
         note_off(tetra)   
         table.remove(tetras, i)  
         parse_groups(tetra)
@@ -547,7 +553,7 @@ function is_valid_location(tetra, new_key)
 
     --- check if the new location is within the boundaries of the grid
     if new_x < 1 or new_x > g.cols or new_y < 1 or new_y > g.rows then
-      print("out of bounds")
+      --- print("out of bounds")
       return false
     end
 
@@ -555,14 +561,14 @@ function is_valid_location(tetra, new_key)
     --- allow the key to be placed on top of another key in the same tetra
     for j, tetra_key in ipairs(tetra.keys) do
       if tetra_key.x == new_x and tetra_key.y == new_y then
-        print("self overlap")
+        --- print("self overlap")
         self_overlap = true
       end
     end
 
     --- check if the new location is not occupied by an lit/unclaimed key or another tetra,
     if (grid_keys[new_x][new_y].lit or grid_keys[new_x][new_y].unclaimed) and not self_overlap then
-      print ("occupied")
+      --- print ("occupied")
       return false
     end
   
@@ -602,7 +608,7 @@ function translate_tetra(tetra, new_key)
     key.x = new_location.x
     key.y = new_location.y
   end
-  print("translated tetra  " .. tetra.pattern)
+  --- print("translated tetra  " .. tetra.pattern)
   parse_groups(tetra)
 end
 
@@ -819,11 +825,8 @@ function key(k, z) ------------------ key() is automatically called by norns
       focus_tetra = nil
       grid_dirty = true
     end
-    
-    screen_dirty = true      
 
   else 
-
     if k == 2 then
       k2_hold = false
     elseif k == 3 then
@@ -843,12 +846,9 @@ function key(k, z) ------------------ key() is automatically called by norns
         end
       end
     end
-  
-    screen_dirty = true --------------- something changed
+  end
 
-  end --------- do nothing when you release a key
-
-
+  screen_dirty = true
 end
 
 -------------------------------------------------------------------------------
@@ -890,7 +890,8 @@ function grid_redraw()
   --- draw the unclaimed keys and pressed locations
   for x = 1, w do
     for y = 1, h do
-      local pressed, lit, unclaimed = grid_key.x, grid_key.y, grid_key.pressed, grid_key.lit, grid_key.unclaimed
+      local grid_key = grid_keys[x][y]
+      local pressed, lit, unclaimed = grid_key.pressed, grid_key.lit, grid_key.unclaimed
       if lit then
         if unclaimed then
           g:led(x, y, 15)
@@ -1154,9 +1155,9 @@ function print_grid()
         line = line .. "p"
       end
       if key.unclaimed then
-        line = line .. "F"
+        line = line .. "U"
       else
-        line = line .. "f"
+        line = line .. "u"
       end
       line = line .. " "
     end
@@ -1194,3 +1195,4 @@ function cleanup()
   clock.cancel(grid_redraw_clock_id)
   clock.cancel(sequencer_clock_id)
 end
+
