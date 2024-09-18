@@ -883,19 +883,22 @@ function grid_redraw()
   --- draw the tetras
   for i, tetra in ipairs(tetras) do
     for j, key in ipairs(tetra.keys) do
-      if tetra.pressed then
-        tetra.level = 13
-      elseif tetra.playing then
+      if tetra.playing then
         if tetra.length_beats > 0 then
-          tetra.level = 15
+          if tetra.pressed then
+            tetra.level = 15
+          else
+           tetra.level = 12
+          end
         else
           tetra.level = 2
         end
       elseif tetra == focus_tetra then
-        tetra.level = 10  
+        tetra.level = 10 
       else 
         tetra.level = 3
       end
+      print("Level " .. tetra.level)
       g:led(key.x, key.y, tetra.level)
     end
   end
