@@ -430,13 +430,17 @@ function parse_tetras()
           for i, pattern_key in ipairs(pattern) do
             local pattern_x, pattern_y = pattern_key[1], pattern_key[2]
             local tetra_key_x, tetra_key_y = x - pattern_x + 1, y - pattern_y + 1
-            local tetra_key = grid_keys[tetra_key_x][tetra_key_y]
-            --- if the key is not present in the grid or is not lit and unclaimed, break
-            if tetra_key_x < 1 or tetra_key_x > w or tetra_key_y < 1 or tetra_key_y > h or
-              tetra_key == nil or not 
-              tetra_key.unclaimed or not 
-              tetra_key.lit then
+            
+            --- if the key is not present in the grid, break
+            if tetra_key_x < 1 or tetra_key_x > w or tetra_key_y < 1 or tetra_key_y > h then
               break
+            end
+
+            local tetra_key = grid_keys[tetra_key_x][tetra_key_y]
+
+            --- if the key is not lit or claimed, break
+            if tetra_key == nil or not tetra_key.unclaimed or not tetra_key.lit then
+               break
             end
             --- if the last key in the pattern is found, create the tetra
             if i == #pattern then
@@ -898,7 +902,6 @@ function grid_redraw()
       else 
         tetra.level = 3
       end
-      print("Level " .. tetra.level)
       g:led(key.x, key.y, tetra.level)
     end
   end
