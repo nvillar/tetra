@@ -260,7 +260,7 @@ function g.key(x, y, z)
   --- start playing pressed tetras if they are not already playing
   --- stop playing tetras that are not pressed
   for i, tetra in ipairs(tetras) do
-    if tetra.pressed  then
+    if tetra.pressed and not tetra.playing then
       note_on(tetra)
     elseif not tetra.pressed and tetra.playing then
       note_off(tetra)
