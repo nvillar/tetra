@@ -56,6 +56,12 @@ focus_tetra = nil
 scale_notes = {}
 --- max volume of a tetra
 max_volume = 2.00
+--- max interval value
+max_interval = 4
+--- max ratchet value
+max_ratchet = 4
+--- max length value
+max_length = 4
 --- number of keys that need to be pressed simultaneously
 --- on a tetra in order to delete it
 delete_keypress = 3
@@ -81,14 +87,14 @@ function init()
    --- sequencer params ---------------------
    params:add_group("sequencer_params", "SEQUENCER", 3)
    params:add{type = "number", id = "max_ratchet", name = "max ratchet",
-   min = 1, max = 12, default = 4,
-   action = function() bound_seq_params() end}
+   min = 1, max = 12, default = max_ratchet,
+   action = function() update_seq_params() end}
    params:add{type = "number", id = "max_interval", name = "max interval",
-   min = 1, max = 12, default = 4,
-   action = function() bound_seq_params() end}
+   min = 1, max = 12, default = max_interval,
+   action = function() update_seq_params() end}
    params:add{type = "number", id = "max_length", name = "max length",
-   min = 1, max = 12, default = 4,
-   action = function() bound_seq_params() end}
+   min = 1, max = 12, default = max_length,
+   action = function() update_seq_params() end}
   
   --- scales params ------------------------
   local scale_names = {}
@@ -750,16 +756,23 @@ end
 --- go through all tetras and make sure their sequencer parameters 
 --- (interval and ratchets) are within bounds
 -------------------------------------------------------------------------------
-function bound_seq_params() 
+function update_seq_params() 
+
+  --- update max_interval, max_length and max_ratchet values
+  max_interval = params:get("max_interval")
+  max_ratchet = params:get("max_ratchet")
+  max_length = params:get("max_length")
+
+  --- check all tetras and update their values if they are greater than new max
   for i, tetra in ipairs(tetras) do
-    if tetra.interval > params:get("max_interval") then
-      tetra.interval = params:get("max_interval")
+    if tetra.interval > max_interval then
+      tetra.interval = max_interval
     end
-    if tetra.ratchet > params:get("max_ratchet") then
-      tetra.ratchet = params:get("max_ratchet")
+    if tetra.ratchet > max_ratchet then
+      tetra.ratchet = max_ratchet
     end
-    if tetra.length_beats > params:get("max_length") then
-      tetra.length_beats = params:get("max_length")
+    if tetra.length_beats > max_length then
+      tetra.length_beats = max_length
     end
   end
   --- trigger all encoders with no deltas to update the ui dials
@@ -793,7 +806,6 @@ function enc(e, d) --------------- enc() is automatically called by norns
     end 
     
     if e == 0 or e == 2 then
-      local max_length = params:get("max_length")
       --- duration of the tetra note in beats, when played by a sequencer      
       focus_tetra.length_beats = util.clamp(focus_tetra.length_beats + d * (max_length / 24), 0, max_length)     
       --- normalize the value to 0-1 for the dial
@@ -853,12 +865,12 @@ function key(k, z) ------------------ key() is automatically called by norns
     if focus_tetra ~= nil then
       if k == 2 then
         focus_tetra.ratchet = focus_tetra.ratchet + 1
-        if focus_tetra.ratchet > params:get("max_ratchet") then
+        if focus_tetra.ratchet > max_ratchet then
           focus_tetra.ratchet = 1
         end
       elseif k == 3 then
         focus_tetra.interval = focus_tetra.interval + 1
-        if focus_tetra.interval > params:get("max_interval") then
+        if focus_tetra.interval > max_interval then
           focus_tetra.interval = 1
         end
       end
@@ -929,8 +941,6 @@ function sequencer_clock()
   
   local fractional_beat = 1
   while true do
-    local max_ratchet = params:get("max_ratchet")
-    local max_interval = params:get("max_interval")
     --- sync to the clock
     clock.sync(1/max_ratchet)    
     if sequencer_playing then
