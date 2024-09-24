@@ -1,11 +1,13 @@
----TETRA ><>
----github.com/nvillar/tetra/
----k1: exit
----k2: ratchet |  k2 + k3:   |
----k3: interval | start/stop |
----e1: pitch
----e2: length
----e3: volume
+---         ><> TETRA ><>
+---   github.com/nvillar/tetra/
+---           (K1) Exit 
+---   (K2) Ratchet (K3) Interval
+---           (E1) Pitch
+---    (E2) Length  (E3) Volume
+--- Adjacent corners start/stop
+---    Diagonal corners reset 
+
+
 
 --- requires
 UI = require("ui")

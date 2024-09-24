@@ -42,13 +42,14 @@ If a tetra adjoins two or more exisiting sequences, the sequences are merged int
 If deleting or moving a tetra splits a group, new groups are created from the remaining tetras.  
 
 The rate at which the sequence is played can be adjusted from the parameters clock menu.  
-Pressing both keys on the norns simultaneously will stop/start group sequences playing.  
+To start or stop the sequence, press and hold any two adjacent corner-keys on the grid. 
  
 ### Ratchets, iterations and rests
 The ratchet and iteration values of a tetra are displayed on the screen when a tetra is selected,  
 in the form "play (ratchet) times every (iteration) loops".  
-For example, a ratchet of 2 and an interation of 3 will play the tetra twice every 3 loops.  
-The default maximum value for ratchets and interations is 4, but this can be changed from the parameters menu.
+For example, a ratchet of 2 and an interation of 3 will play the tetra twice every 3 loops. 
+Pressing the norns K2 and K3 buttons will increase ratchet and iteration values, and loop back to 1 after the
+maximum value, which can be set in the parameters menu. Pressing both buttons simultaneously will reset the values to 1.  
 
 Turning the length parameter fully counter-clockwise turns the note into a _rest_.
 Rests can be particularly useful to allow long monophonic notes to play out in a sequence without being cut off.  
