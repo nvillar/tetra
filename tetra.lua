@@ -203,7 +203,54 @@ function g.key(x, y, z)
 
   grid_keys[x][y].pressed = pressed
   
-  --- process keys that are pressed and determine if they are lit or unclaimed
+  --- check for special reset conditions
+  --- reset if two diagonally opposite corners are pressed
+  if (grid_keys[1][1].pressed and grid_keys[w][h].pressed) or
+      (grid_keys[1][h].pressed and grid_keys[w][1].pressed) then
+    reset()
+    return
+  end
+  
+  --- check for special sequencer playback conditions
+  --- start/stop sequencer if two adjacent corners are pressed
+  if (grid_keys[1][1].pressed and grid_keys[w][1].pressed) or
+      (grid_keys[1][1].pressed and grid_keys[1][h].pressed) or
+      (grid_keys[1][h].pressed and grid_keys[w][h].pressed) or
+      (grid_keys[w][h].pressed and grid_keys[w][1].pressed) then
+
+    --- turn off the lit state of the keys that may have been lit in the process 
+    --- of starting or stopping the sequencer
+    if grid_keys[1][1].lit and grid_keys[1][1].unclaimed and grid_keys[1][1].pressed then
+      grid_keys[1][1].lit = false
+      grid_keys[1][1].unclaimed = false
+    end
+    if grid_keys[w][1].lit and grid_keys[w][1].unclaimed and grid_keys[w][1].pressed then
+      grid_keys[w][1].lit = false
+      grid_keys[w][1].unclaimed = false
+    end
+    if grid_keys[1][h].lit and grid_keys[1][h].unclaimed and grid_keys[1][h].pressed then
+      grid_keys[1][h].lit = false
+      grid_keys[1][h].unclaimed = false
+    end
+    if grid_keys[w][h].lit and grid_keys[w][h].unclaimed and grid_keys[w][h].pressed then
+      grid_keys[w][h].lit = false
+      grid_keys[w][h].unclaimed = false
+    end
+      
+    sequencer_playing = not sequencer_playing
+
+    if not sequencer_playing then
+      note_stop_all()      
+    end
+    
+    focus_tetra = nil
+    grid_dirty = true
+    screen_dirty = true
+
+    return
+  end
+
+    --- process keys that are pressed and determine if they are lit or unclaimed
   --- turn key off if: it is unclaimed, pressed and lit
   if grid_keys[x][y].lit 
         and grid_keys[x][y].unclaimed 
@@ -221,14 +268,7 @@ function g.key(x, y, z)
     grid_keys[x][y].unclaimed = true
   end
 
-  --- check for special reset conditions
-  --- reset if two diagonally opposite corners are pressed
-  if (grid_keys[1][1].pressed and grid_keys[w][h].pressed) or
-      (grid_keys[1][h].pressed and grid_keys[w][1].pressed) then
-    reset()
-    return
-  end
-  
+
   --- parse grid, look for new tetras and create them
   --- returns true if any tetras are created
   parse_tetras()
@@ -837,6 +877,8 @@ end
 
 k2_hold = false
 k3_hold = false
+k2_reset = false
+k2_reset = false
 
 function key(k, z) ------------------ key() is automatically called by norns
 
@@ -849,13 +891,26 @@ function key(k, z) ------------------ key() is automatically called by norns
     end
 
     if k2_hold and k3_hold then
-      sequencer_playing = not sequencer_playing
-      note_stop_all()
-      focus_tetra = nil
-      grid_dirty = true
+      focus_tetra.ratchet = 1
+      focus_tetra.interval = 1
+      k2_reset = true
+      k3_reset = true
+      print("reset")
     end
 
   else 
+    if k == 2 and k2_reset then
+      k2_reset = false
+      k2_hold = false
+      print("un reset 2")
+      return
+    elseif k == 3 and k3_reset then
+      k3_reset = false
+      k3_hold = false
+      print("un reset 3")
+      return
+    end
+    
     if k == 2 then
       k2_hold = false
     elseif k == 3 then
@@ -863,6 +918,7 @@ function key(k, z) ------------------ key() is automatically called by norns
     end
 
     if focus_tetra ~= nil then
+      print("key " .. k)
       if k == 2 then
         focus_tetra.ratchet = focus_tetra.ratchet + 1
         if focus_tetra.ratchet > max_ratchet then
