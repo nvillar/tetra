@@ -313,9 +313,9 @@ function g.key(x, y, z)
   --- start playing pressed tetras if they are not already playing
   --- stop playing tetras that are not pressed
   for i, tetra in ipairs(tetras) do
-    if tetra.pressed and not tetra.playing then
+    if tetra.pressed and not (tetra.playing or tetra.resting) then
       note_on(tetra)
-    elseif not tetra.pressed and tetra.playing then
+    elseif not tetra.pressed and (tetra.playing or tetra.resting) then
       note_off(tetra)
     end
   end
@@ -353,8 +353,12 @@ function note_on(tetra)
   local player = params:lookup_param(tetra.shape):get_player()
 
   if player ~= nil then
-    player:note_on(tetra.note, tetra.volume)
-    tetra.playing = true
+    if tetra.length_beats > 0 then
+      player:note_on(tetra.note, tetra.volume)
+      tetra.playing = true
+    else
+      tetra.resting = true
+    end
   end
 end
 
@@ -845,7 +849,7 @@ function enc(e, d) --------------- enc() is automatically called by norns
   if focus_tetra ~= nil then    
     
     if e == 0 or e == 1 then 
-        if focus_tetra.playing then
+        if focus_tetra.playing or focus_tetra.resting then
           note_off(focus_tetra)
         end
 
@@ -971,7 +975,8 @@ function grid_redraw()
   --- draw the tetras
   for i, tetra in ipairs(tetras) do
     for j, key in ipairs(tetra.keys) do
-      if tetra.presssed then
+      --- print state of the tetra: pressed, playing, resting, focus
+      if tetra.pressed then
         tetra.level = 15
       elseif tetra.playing then
            tetra.level = 12
