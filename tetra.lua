@@ -332,8 +332,11 @@ function note_play(tetra)
     if tetra.length_beats > 0 then
       local length_sec = clock.get_beat_sec () * tetra.length_beats
       player:play_note(tetra.note, tetra.volume, length_sec)
+      tetra.playing = true
+    else
+      tetra.resting = true
     end    
-    tetra.playing = true
+    
   end  
 end
 
@@ -360,6 +363,7 @@ function note_off(tetra)
   if player ~= nil then
     player:note_off(tetra.note)
     tetra.playing = false
+    tetra.resting = false
   end
 end
 
@@ -372,6 +376,10 @@ function note_stop_all()
     if player ~= nil then
       player:stop_all()
     end
+  end
+  for i, tetra in ipairs(tetras) do
+    tetra.playing = false
+    tetra.resting = false
   end
 end
 
@@ -532,6 +540,7 @@ function create_tetra(pattern_name, keys)
   tetra.shape = string.sub(tetra.pattern, 1, 1)
   tetra.keys = keys
   tetra.playing = false
+  tetra.resting = false
   tetra.note = get_random_note_in_scale()
   tetra.length_beats = 0.1
   tetra.volume = 1.0
@@ -957,16 +966,12 @@ function grid_redraw()
   --- draw the tetras
   for i, tetra in ipairs(tetras) do
     for j, key in ipairs(tetra.keys) do
-      if tetra.playing then
-        if tetra.length_beats > 0 then
-          if tetra.pressed then
-            tetra.level = 15
-          else
+      if tetra.presssed then
+        tetra.level = 15
+      elseif tetra.playing then
            tetra.level = 12
-          end
-        else
-          tetra.level = 2
-        end
+      elseif tetra.resting then
+         tetra.level = 2
       elseif tetra == focus_tetra then
         tetra.level = 10 
       else 
@@ -1008,7 +1013,7 @@ function sequencer_clock()
         --- if the group is new, initialize the sequence
         if group.tetra_sequence_index == nil then
           group.tetra_sequence_index = 1
-          group.sequence_iteration = 1                         
+          group.sequence_iteration = 1
         --- advance the sequence if the fractional beat is 1   
         elseif fractional_beat == 1 then         
           --- advance by 1, loop back if at the end of the sequence
@@ -1028,6 +1033,7 @@ function sequencer_clock()
               
         if not tetra.pressed then
           tetra.playing = false
+          tetra.resting = false
         end
 
         --- check whether the tetra should be played in this sequence iteration
@@ -1035,10 +1041,14 @@ function sequencer_clock()
           if fractional_beat <= tetra.ratchet then
             note_play(tetra)
           end
+        else
+          tetra.playing = false
+          tetra.resting = true
         end
 
         if fractional_beat == max_ratchet and not tetra.pressed then
           tetra.playing = false
+          tetra.resting = false
         end
 
         grid_dirty = true
