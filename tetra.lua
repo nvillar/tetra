@@ -124,9 +124,14 @@ function init()
 
   --- save params --------------------------
   params:add_separator("state_params", "load + save")
-  params:add{type = "option", id = "state_slot", name = "save slot #", options = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"}, default = 1}
-  params:add{type = "trigger", id = "load_state", name = "load", action = function() load_state(params:get("state_slot")) end}
-  params:add{type = "trigger", id = "save_state", name = "save", action = function() save_state(params:get("state_slot")) end}
+  params:add{type = "option", id = "state_slot", name = "save #", options = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"}, default = 1,
+             action = function() params:set("state_contents", get_slot_contents(params:get("state_slot"))) end}
+  params:add{type = "text", id = "state_contents", name = "content", text=get_slot_contents("1"), 
+            action = function() params:set("state_contents", get_slot_contents(params:get("state_slot"))) end}
+  params:add{type = "trigger", id = "load_state", name = "load",  
+             action = function() load_state(params:get("state_slot")) end}
+  params:add{type = "trigger", id = "save_state", name = "save",  
+             action = function() save_state(params:get("state_slot")) params:set("state_contents", get_slot_contents(params:get("state_slot"))) end}
 
 
   --- shapes params --------------------------
@@ -1191,8 +1196,6 @@ end
 function save_state(slot)
   local filename = norns.state.data..slot.."_save_tetra.txt"
 
-  --- print("saving state to " .. filename)
-
   local state = {}
   state.tetras = tetras
   state.groups = groups
@@ -1200,15 +1203,13 @@ function save_state(slot)
   state.focus_tetra = focus_tetra
   state.scale_notes = scale_notes
   state.sequencer_playing = sequencer_playing
- 
+  state.contents = #tetras .. " tetras, " .. #groups .. " groups"
   tab.save(state, filename)
 end
 -------------------------------------------------------------------------------
 function load_state(slot)
   local filename = norns.state.data..slot.."_save_tetra.txt"
   local file_exists = util.file_exists(filename)
-  
-  --- print ("loading state from " .. filename)
 
   if not file_exists then
     return
@@ -1227,6 +1228,22 @@ function load_state(slot)
   screen_dirty = true
 end
 
+function get_slot_contents(slot)
+  local filename = norns.state.data..slot.."_save_tetra.txt"
+  local file_exists = util.file_exists(filename)
+
+  if not file_exists then
+    return "empty"
+  end
+  
+  local state = tab.load(filename)
+
+  if state.contents == nil then
+    return "empty"
+  end
+
+  return state.contents
+end
 -------------------------------------------------------------------------------
 --- debug functions
 -------------------------------------------------------------------------------
