@@ -1,4 +1,7 @@
 # tetra
+
+[![tetra running on norns and grid](https://img.youtube.com/vi/M0aHRQAvBRA/maxresdefault.jpg)](https://www.youtube.com/watch?v=M0aHRQAvBRA)
+
 **tetra** is a script for monome norns and grid.
 
 Use the grid to create and interact with sound objects called tetras.  
@@ -79,8 +82,6 @@ are included with the script, which can be loaded from the PARAMETERS>>PSET menu
 
 Thank you the monome community, especially @tehn, @dndrks for the study material,  
 @tyleretters for the nornsilerplate, and @sixolet for the n.b. voice library.
-
-
 
 
 
